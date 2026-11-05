@@ -1,29 +1,56 @@
-Cortex MCP 🧠
+# Cortex MCP
 
-Helping AI agents question what they think they know.
+Cortex MCP aims to help AI agents make claims accountable to evidence. The project is designed to record verification criteria, evidence provenance, assumptions, and review findings locally.
 
-Cortex is an open-source, local-first Model Context Protocol (MCP) server designed to help AI agents track assumptions, organize evidence, review decisions, and learn from past mistakes.
+Milestone 0 provides a stdio MCP server with one tool, `cortex_health`. Call it with `{}` to receive `ok` and confirm that the process is responding. The foundation is stateless. Evidence and verification tools are planned in the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md).
 
-Instead of simply recording what an agent does, Cortex provides structured tools to help agents evaluate the reasoning behind their decisions.
+For the storage milestone, the planned driver is Node's built-in `node:sqlite`. It avoids a separate native addon installation. Its synchronous API and release-candidate status will be evaluated when persistence is implemented. [Node.js SQLite documentation](https://nodejs.org/download/release/latest-lithium/docs/api/sqlite.html)
 
-Why Cortex?
+## Build locally
 
-AI agents can make incorrect assumptions, overlook contradictory evidence, and confidently act on unverified information.
+Use the Node.js version in `.node-version` and the pnpm version in `package.json`.
 
-Cortex aims to make these failures easier to identify by providing a persistent, evidence-based decision tracking system.
+```sh
+pnpm install --frozen-lockfile
+pnpm build
+```
 
-Core Principles
+The build produces `dist/cli.js`, which an MCP client launches with `node` over stdio. Cortex runs locally without a cloud account or API key. Stdout carries MCP messages.
 
-* Evidence over confidence — Claims should be supported by verifiable evidence.
-* Local-first — Your data stays on your machine.
-* Model-agnostic — Designed for any MCP-compatible AI agent.
-* No external AI required — No API keys or additional LLM services.
-* Open source — Built for developers, researchers, and the AI community.
+## Connect a client
 
-Project Status
+For a client that uses an `mcpServers` config, set the command and the path to the compiled entry point. Use an absolute path to Node.js if the client does not inherit your shell's `PATH`.
 
-🚧 Early Development — v0.1.0
+```json
+{
+  "mcpServers": {
+    "cortex-mcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/cortex-mcp/dist/cli.js"]
+    }
+  }
+}
+```
 
-Cortex is currently in its initial development phase. Its first milestone focuses on assumption tracking, evidence management, and rule-based decision reviews.
+From the project directory, the official [MCP Inspector](https://github.com/modelcontextprotocol/inspector) can launch the CLI, list its tools, and call `cortex_health`.
 
-Contributions, feedback, and ideas are welcome.
+```sh
+npx --yes @modelcontextprotocol/inspector@2.14.0 --cli node dist/cli.js --method tools/list
+npx --yes @modelcontextprotocol/inspector@2.14.0 --cli node dist/cli.js --method tools/call --tool-name cortex_health
+```
+
+## Run the checks
+
+```sh
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm build
+pnpm test
+```
+
+The protocol tests launch the built CLI and exercise initialization, discovery, a tool call, invalid input, and clean stdio shutdown.
+
+## License
+
+[MIT](LICENSE)
