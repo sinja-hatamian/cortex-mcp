@@ -239,6 +239,17 @@ test('rolls back incomplete claims, assumption transitions, and review snapshots
   expect(() =>
     repos.claims.create(project, 'Duplicate criterion', [criterion, criterion]),
   ).toThrow(/unique constraint/i);
+  expect(() =>
+    repos.claims.create(
+      'new-project',
+      'Duplicate criterion',
+      [criterion, criterion],
+      {
+        createProjectIfMissing: true,
+      },
+    ),
+  ).toThrow(/unique constraint/i);
+  expect(repos.projects.find('new-project')).toBeUndefined();
   expect(db.prepare('SELECT count(*) AS count FROM claims').get()).toEqual({
     count: 0,
   });

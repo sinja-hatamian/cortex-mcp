@@ -2,7 +2,7 @@
 
 Cortex MCP aims to help AI agents make claims accountable to evidence. The project is designed to record verification criteria, evidence provenance, assumptions, and review findings locally.
 
-The stdio server exposes one tool, `cortex_health`. Call it with `{}` to receive `ok` and confirm that the process is responding. Milestone 1 adds the internal storage layer. The health tool runs without opening a database. Evidence and verification tools are planned in the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md).
+The stdio server lets clients register claims and record evidence. Call `cortex_health` with `{}` to check that the server is responding. The health tool runs without opening a database. Review and verification are planned in the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md).
 
 ## Build locally
 
@@ -37,6 +37,46 @@ npx --yes @modelcontextprotocol/inspector@2.14.0 --cli node dist/cli.js --method
 npx --yes @modelcontextprotocol/inspector@2.14.0 --cli node dist/cli.js --method tools/call --tool-name cortex_health
 ```
 
+## Register claims and evidence
+
+Call `cortex_create_claim` with an explicit project ID, a statement, and 1 to 32 criteria. Criterion keys must be unique within the claim.
+
+```json
+{
+  "project_id": "example-api",
+  "statement": "Protected routes reject unauthenticated requests",
+  "criteria": [
+    {
+      "key": "negative-test",
+      "description": "Unauthenticated requests receive a denial response",
+      "required": true
+    }
+  ]
+}
+```
+
+The tool returns `claim_id`, a `criteria` array of `key` and `criterion_id` pairs, and `status: "unverified"`. A new project is created with the strict policy when its first claim is saved.
+
+Call `cortex_add_evidence` with the same project ID. Replace the example UUIDs with the IDs returned by `cortex_create_claim`. Omit `criterion_id` to attach the record to the claim as a whole.
+
+```json
+{
+  "project_id": "example-api",
+  "claim_id": "20ca80ac-856d-419c-acfb-09861cbba83f",
+  "criterion_id": "f54c6a36-8a65-4b77-a2d3-7f7e205dd5d8",
+  "content_summary": "Integration test observed a 401 response",
+  "relation": "supports",
+  "origin": "agent_reported",
+  "source_type": "test",
+  "source_ref": "pnpm test:integration",
+  "observed_at": "2026-11-05T00:00:00Z"
+}
+```
+
+`relation` accepts `supports`, `contradicts`, or `neutral`. `origin` defaults to `agent_reported` and also accepts `user_attested` or `tool_output_recorded`. `source_type` accepts `test`, `build`, `log`, `document`, `manual_observation`, or `other`. `source_ref`, `collector`, and a 64-character hexadecimal SHA-256 `artifact_digest` are optional.
+
+The tool returns `evidence_id`, recorded `provenance`, and `assurance: "unverified_origin"`. A supplied digest sets `integrity_status` to `digest_recorded`. The caller supplies both the origin and the digest, so neither establishes independent collection. Evidence registration leaves the claim unverified. Missing and out-of-scope claim or criterion IDs return the same `INVALID_REFERENCE` error.
+
 ## Local storage
 
 The storage layer uses Node's built-in, synchronous `node:sqlite` driver. It creates and migrates `cortex.sqlite3` when the internal database is opened. [Node.js SQLite documentation](https://nodejs.org/download/release/latest-lithium/docs/api/sqlite.html)
@@ -61,7 +101,7 @@ pnpm build
 pnpm test
 ```
 
-The protocol tests exercise the built CLI over stdio. The storage tests use temporary SQLite databases to check migrations, project isolation, atomic writes, and persistence across processes.
+The protocol tests launch the built CLI over stdio and check tool discovery, claim creation, evidence registration, and safe input errors. The storage tests use temporary SQLite databases to check migrations, project isolation, atomic writes, and persistence across processes.
 
 ## License
 

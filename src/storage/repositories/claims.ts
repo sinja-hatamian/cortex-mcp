@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { iso } from 'zod/v4';
+import { MAX_CLAIM_CRITERIA } from '../../core/models.js';
 import type {
   Claim,
   ClaimWithCriteria,
@@ -46,14 +47,25 @@ export function claimRepository(db: DatabaseSync) {
       projectId: string,
       statement: string,
       criteria: readonly CriterionInput[],
+      { createProjectIfMissing = false } = {},
     ): ClaimWithCriteria {
-      if (criteria.length < 1 || criteria.length > 32) {
-        throw new RangeError('A claim must have 1 to 32 criteria');
+      if (criteria.length < 1 || criteria.length > MAX_CLAIM_CRITERIA) {
+        throw new RangeError(
+          `A claim must have 1 to ${MAX_CLAIM_CRITERIA} criteria`,
+        );
       }
 
       const id = randomUUID();
       const now = new Date().toISOString();
       return inTransaction(db, () => {
+        if (createProjectIfMissing) {
+          db.prepare(
+            `
+            INSERT INTO projects (project_id, created_at, updated_at)
+            VALUES (?, ?, ?) ON CONFLICT (project_id) DO NOTHING
+          `,
+          ).run(projectId, now, now);
+        }
         db.prepare(
           'INSERT INTO claims (project_id, id, statement, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
         ).run(projectId, id, statement, now, now);

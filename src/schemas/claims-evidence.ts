@@ -1,0 +1,124 @@
+import { Buffer } from 'node:buffer';
+import * as z from 'zod/v4';
+import { MAX_CLAIM_CRITERIA } from '../core/models.js';
+
+const objectOptions = {
+  error: 'Expected an object with only documented fields',
+};
+
+function boundedText(maxBytes: number) {
+  return z
+    .string()
+    .max(maxBytes)
+    .refine((value) => Buffer.byteLength(value) <= maxBytes, {
+      error: `Must be at most ${maxBytes} UTF-8 bytes`,
+    })
+    .refine((value) => !value.includes('\0'), {
+      error: 'Must not contain a NUL character',
+    });
+}
+
+const description = boundedText(2000).refine(
+  (value) => value.trim().length > 0,
+  {
+    error: 'Must contain text',
+  },
+);
+const label = boundedText(128).refine(
+  (value) => value.length > 0 && value === value.trim(),
+  { error: 'Must be nonempty and have no surrounding whitespace' },
+);
+const id = z.uuidv4();
+const inputId = id.toLowerCase();
+
+const criterion = z.strictObject(
+  { key: label, description, required: z.boolean() },
+  objectOptions,
+);
+const origin = z.enum([
+  'agent_reported',
+  'user_attested',
+  'tool_output_recorded',
+]);
+const sourceType = z.enum([
+  'test',
+  'build',
+  'log',
+  'document',
+  'manual_observation',
+  'other',
+]);
+const relation = z.enum(['supports', 'contradicts', 'neutral']);
+const sourceRef = boundedText(512);
+const collector = boundedText(128);
+const artifactDigest = z.string().regex(/^[a-f0-9]{64}$/i, {
+  error: 'Expected a 64-character hexadecimal SHA-256 digest',
+});
+const utcTimestamp = z.iso.datetime();
+const observedTimestamp = z.iso
+  .datetime({ offset: true })
+  .max(40)
+  .refine(
+    (value) => {
+      const time = Date.parse(value);
+      return (
+        Number.isFinite(time) &&
+        utcTimestamp.safeParse(new Date(time).toISOString()).success
+      );
+    },
+    { error: 'Must represent a valid UTC timestamp with a four-digit year' },
+  );
+
+export const createClaimInput = z.strictObject(
+  {
+    project_id: label,
+    statement: description,
+    criteria: z
+      .array(criterion)
+      .min(1)
+      .max(MAX_CLAIM_CRITERIA)
+      .refine(
+        (criteria) =>
+          new Set(criteria.map(({ key }) => key)).size === criteria.length,
+        { error: 'Criterion keys must be unique within a claim' },
+      ),
+  },
+  objectOptions,
+);
+
+export const createClaimOutput = z.object({
+  claim_id: id,
+  criteria: z.array(z.object({ key: label, criterion_id: id })),
+  status: z.literal('unverified'),
+});
+
+export const addEvidenceInput = z.strictObject(
+  {
+    project_id: label,
+    claim_id: inputId,
+    criterion_id: inputId.optional(),
+    origin: origin.default('agent_reported'),
+    source_type: sourceType,
+    source_ref: sourceRef.optional(),
+    observed_at: observedTimestamp,
+    relation,
+    content_summary: description,
+    artifact_digest: artifactDigest.optional(),
+    collector: collector.optional(),
+  },
+  objectOptions,
+);
+
+export const addEvidenceOutput = z.object({
+  evidence_id: id,
+  provenance: z.object({
+    origin,
+    source_type: sourceType,
+    source_ref: sourceRef.nullable(),
+    observed_at: utcTimestamp,
+    artifact_digest: artifactDigest.nullable(),
+    collector: collector.nullable(),
+    integrity_status: z.enum(['unverified', 'digest_recorded']),
+  }),
+  assurance: z.literal('unverified_origin'),
+});

@@ -1,5 +1,7 @@
 export type ProjectPolicy = 'strict' | 'provisional';
 
+export const MAX_CLAIM_CRITERIA = 32;
+
 export type Project = {
   project_id: string;
   policy: ProjectPolicy;

@@ -11,6 +11,11 @@ import { expect, test } from 'vitest';
 import packageInfo from '../../package.json' with { type: 'json' };
 
 const cli = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
+const toolNames = [
+  'cortex_health',
+  'cortex_create_claim',
+  'cortex_add_evidence',
+];
 
 test('an MCP client discovers and calls the health tool over stdio', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'cortex-smoke-'));
@@ -19,6 +24,7 @@ test('an MCP client discovers and calls the health tool over stdio', async () =>
     command: process.execPath,
     args: [cli],
     cwd,
+    env: { CORTEX_DATA_DIR: join(cwd, 'data') },
   });
 
   try {
@@ -29,7 +35,7 @@ test('an MCP client discovers and calls the health tool over stdio', async () =>
     });
 
     const { tools } = await client.listTools();
-    expect(tools.map(({ name }) => name)).toEqual(['cortex_health']);
+    expect(tools.map(({ name }) => name)).toEqual(toolNames);
     const health = await client.callTool({
       name: 'cortex_health',
       arguments: {},
@@ -88,7 +94,7 @@ test('stdout carries only MCP responses and stdin EOF ends the CLI', async () =>
     expect(await readResponse()).toMatchObject({
       jsonrpc: '2.0',
       id: 2,
-      result: { tools: [{ name: 'cortex_health' }] },
+      result: { tools: toolNames.map((name) => ({ name })) },
     });
 
     send({

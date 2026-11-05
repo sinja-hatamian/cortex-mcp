@@ -4,6 +4,18 @@ import { join, posix, win32 } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { migrate } from './migrations/index.js';
 
+const SQLITE_CONSTRAINT_FOREIGNKEY = 787;
+
+export function isForeignKeyViolation(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    error.code === 'ERR_SQLITE_ERROR' &&
+    'errcode' in error &&
+    error.errcode === SQLITE_CONSTRAINT_FOREIGNKEY
+  );
+}
+
 export function resolveDataDirectory(
   env: NodeJS.ProcessEnv = process.env,
   platform = process.platform,
