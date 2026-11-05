@@ -2,7 +2,7 @@
 
 Cortex MCP aims to help AI agents make claims accountable to evidence. The project is designed to record verification criteria, evidence provenance, assumptions, and review findings locally.
 
-The stdio server lets clients register claims, record evidence, and review claims or proposed decisions. Call `cortex_health` with `{}` to check that the server is responding. The health tool runs without opening a database. See the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md) for the full roadmap.
+The stdio server lets clients register claims, record evidence, track assumptions, review claims or proposed decisions, and recover project context. Call `cortex_health` with `{}` to check that the server is responding. The health tool runs without opening a database. See the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md) for the full roadmap.
 
 ## Build locally
 
@@ -109,6 +109,32 @@ Decision reviews are advisory and cover the referenced records. A contradicted c
 
 Findings sort by severity, rule ID, and record IDs. Grouped evidence findings report the total and include up to three matching evidence IDs. Later evidence or assumption updates leave saved reviews intact.
 
+## Track assumptions and recover context
+
+Call `cortex_track_assumption` with `project_id` and `statement`. You can also supply `context` and a caller-reported `confidence` between 0 and 1. The tool returns `assumption_id` and initial status `unverified`. The first assumption can create a project under the strict policy.
+
+Call `cortex_update_assumption` with `project_id`, `assumption_id`, `status`, and a `reason`. Statuses are `unverified`, `supported`, `refuted`, and `inconclusive`. Each update records the previous and new status, reason, and timestamp. The result includes the assumption ID, status, and `updated_at`. A missing or out-of-scope assumption returns `INVALID_REFERENCE`. Statuses record the caller's assessment and can be referenced in decision reviews.
+
+Use `cortex_get_context` to recover selected collections after reconnecting.
+
+```json
+{
+  "project_id": "example-api",
+  "include": [
+    "claims",
+    "assumptions",
+    "assumption_events",
+    "evidence",
+    "reviews"
+  ],
+  "limit": 5
+}
+```
+
+The result contains the project ID and only the requested collections. The limit is 1 to 20 records per collection and defaults to 20. Records are sorted by creation time, newest first, with descending record IDs breaking ties. For events on one assumption, `position` gives the order in which updates were recorded.
+
+Claim entries include criterion IDs, keys, and required flags. Evidence includes claimed provenance and `assurance: "unverified_origin"`. Review summaries include the target, status, policy version, and creation time. A project with no matching records returns empty arrays for the requested collections.
+
 ## Local storage
 
 The storage layer uses Node's built-in, synchronous `node:sqlite` driver. It creates and migrates `cortex.sqlite3` when the internal database is opened. [Node.js SQLite documentation](https://nodejs.org/download/release/latest-lithium/docs/api/sqlite.html)
@@ -133,7 +159,7 @@ pnpm build
 pnpm test
 ```
 
-The protocol tests launch the built CLI over stdio and check tool discovery, claim and evidence registration, reviews, and safe input errors. Unit tests exercise policy and rule ordering. Storage tests use temporary SQLite databases to check migrations, project isolation, atomic writes, and persistence across processes.
+The protocol tests launch the built CLI over stdio and check registration, reviews, assumption updates, context recovery, and safe input errors. Unit tests exercise policy and rule ordering. Storage tests use temporary SQLite databases to check migrations, bounded retrieval, project isolation, atomic writes, and persistence across processes.
 
 ## License
 

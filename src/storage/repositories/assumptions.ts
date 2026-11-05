@@ -7,6 +7,13 @@ import type {
   AssumptionStatus,
 } from '../../core/models.js';
 import { inTransaction } from '../transaction.js';
+import { ensureProject } from './projects.js';
+
+export class AssumptionNotFound extends Error {
+  constructor() {
+    super('Assumption not found in project');
+  }
+}
 
 export function assumptionRepository(db: DatabaseSync) {
   const find = (
@@ -20,25 +27,36 @@ export function assumptionRepository(db: DatabaseSync) {
   return {
     find,
 
-    create(projectId: string, input: AssumptionInput): Assumption {
+    create(
+      projectId: string,
+      input: AssumptionInput,
+      { createProjectIfMissing = false } = {},
+    ): Assumption {
       const now = new Date().toISOString();
-      return db
-        .prepare(
-          `
+      const insert = () =>
+        db
+          .prepare(
+            `
         INSERT INTO assumptions (project_id, id, statement, context, confidence, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         RETURNING *
       `,
-        )
-        .get(
-          projectId,
-          randomUUID(),
-          input.statement,
-          input.context ?? null,
-          input.confidence ?? null,
-          now,
-          now,
-        ) as Assumption;
+          )
+          .get(
+            projectId,
+            randomUUID(),
+            input.statement,
+            input.context ?? null,
+            input.confidence ?? null,
+            now,
+            now,
+          ) as Assumption;
+      if (!createProjectIfMissing) return insert();
+
+      return inTransaction(db, () => {
+        ensureProject(db, projectId, now);
+        return insert();
+      });
     },
 
     updateStatus(
@@ -49,7 +67,7 @@ export function assumptionRepository(db: DatabaseSync) {
     ): Assumption {
       return inTransaction(db, () => {
         const assumption = find(projectId, assumptionId);
-        if (!assumption) throw new Error('Assumption not found in project');
+        if (!assumption) throw new AssumptionNotFound();
 
         const now = new Date().toISOString();
         const updated = db

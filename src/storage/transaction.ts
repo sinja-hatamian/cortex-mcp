@@ -1,9 +1,13 @@
 import type { DatabaseSync } from 'node:sqlite';
 
-export function inTransaction<T>(db: DatabaseSync, write: () => T): T {
-  db.exec('BEGIN IMMEDIATE');
+export function inTransaction<T>(
+  db: DatabaseSync,
+  operation: () => T,
+  mode: 'write' | 'read' = 'write',
+): T {
+  db.exec(mode === 'read' ? 'BEGIN' : 'BEGIN IMMEDIATE');
   try {
-    const result = write();
+    const result = operation();
     db.exec('COMMIT');
     return result;
   } catch (error) {

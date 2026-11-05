@@ -13,12 +13,12 @@ const criterion = z.strictObject(
   { key: label, description, required: z.boolean() },
   objectOptions,
 );
-const origin = z.enum([
+export const origin = z.enum([
   'agent_reported',
   'user_attested',
   'tool_output_recorded',
 ]);
-const sourceType = z.enum([
+export const sourceType = z.enum([
   'test',
   'build',
   'log',
@@ -26,7 +26,8 @@ const sourceType = z.enum([
   'manual_observation',
   'other',
 ]);
-const relation = z.enum(['supports', 'contradicts', 'neutral']);
+export const relation = z.enum(['supports', 'contradicts', 'neutral']);
+export const integrityStatus = z.enum(['unverified', 'digest_recorded']);
 const sourceRef = boundedText(512);
 const collector = boundedText(128);
 const artifactDigest = z.string().regex(/^[a-f0-9]{64}$/i, {
@@ -96,7 +97,7 @@ export const addEvidenceOutput = z.object({
     observed_at: utcTimestamp,
     artifact_digest: artifactDigest.nullable(),
     collector: collector.nullable(),
-    integrity_status: z.enum(['unverified', 'digest_recorded']),
+    integrity_status: integrityStatus,
   }),
   assurance: z.literal('unverified_origin'),
 });

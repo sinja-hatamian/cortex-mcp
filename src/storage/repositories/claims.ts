@@ -11,6 +11,7 @@ import type {
   EvidenceInput,
 } from '../../core/models.js';
 import { inTransaction } from '../transaction.js';
+import { ensureProject } from './projects.js';
 
 type CriterionRow = Omit<Criterion, 'required'> & { required: number };
 
@@ -58,14 +59,7 @@ export function claimRepository(db: DatabaseSync) {
       const id = randomUUID();
       const now = new Date().toISOString();
       return inTransaction(db, () => {
-        if (createProjectIfMissing) {
-          db.prepare(
-            `
-            INSERT INTO projects (project_id, created_at, updated_at)
-            VALUES (?, ?, ?) ON CONFLICT (project_id) DO NOTHING
-          `,
-          ).run(projectId, now, now);
-        }
+        if (createProjectIfMissing) ensureProject(db, projectId, now);
         db.prepare(
           'INSERT INTO claims (project_id, id, statement, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
         ).run(projectId, id, statement, now, now);

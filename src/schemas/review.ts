@@ -40,7 +40,12 @@ export const reviewInput = z
 
 export type ReviewRequest = z.output<typeof reviewInput>;
 
-const claimState = z.enum(['unverified', 'verified', 'contradicted']);
+export const claimState = z.enum(['unverified', 'verified', 'contradicted']);
+export const decisionStatus = z.enum([
+  'pass_with_caveats',
+  'warning',
+  'blocked_recommendation',
+]);
 const summary = {
   review_id: id,
   policy_version: z.string(),
@@ -67,6 +72,6 @@ export const reviewOutput = z.discriminatedUnion('target_type', [
   z.object({
     ...summary,
     target_type: z.literal('decision'),
-    status: z.enum(['pass_with_caveats', 'warning', 'blocked_recommendation']),
+    status: decisionStatus,
   }),
 ]);

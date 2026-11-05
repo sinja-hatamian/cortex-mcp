@@ -3,7 +3,11 @@ import { mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
+import {
+  contextCollections,
+  MAX_CONTEXT_LIMIT,
+} from '../../src/core/context.js';
 import type { EvidenceInput, ReviewInput } from '../../src/core/models.js';
 import { openDatabase, resolveDataDirectory } from '../../src/storage/db.js';
 import { migrate } from '../../src/storage/migrations/index.js';
@@ -318,6 +322,100 @@ test('review snapshot reads and persistence share a transaction that excludes co
   expect(db.isTransaction).toBe(false);
   competing.evidence.add(project, reportedEvidence(claim.id));
   expect(repos.reviews.find(project, review.id)).toEqual(review);
+});
+
+test('context limits each collection, orders timestamp ties by ID, and excludes other projects', () => {
+  using db = openDatabase(storageEnv());
+  const repos = createRepositories(db);
+  repos.projects.create(project);
+  repos.projects.create(otherProject);
+
+  function seed(projectId: string) {
+    const claim = repos.claims.create(projectId, 'Protected routes', [
+      criterion,
+    ]);
+    const evidence = repos.evidence.add(projectId, reportedEvidence(claim.id));
+    const assumption = repos.assumptions.create(projectId, {
+      statement: 'Middleware is active',
+    });
+    repos.assumptions.updateStatus(
+      projectId,
+      assumption.id,
+      'supported',
+      'Route inspection',
+    );
+    const [event] = repos.assumptions.listEvents(projectId, assumption.id);
+    const review = repos.reviews.save(projectId, claimReview(claim.id));
+    return {
+      claim_id: claim.id,
+      evidence_id: evidence.id,
+      assumption_id: assumption.id,
+      event_id: event.id,
+      review_id: review.id,
+    };
+  }
+
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-11-05T00:00:00.000Z'));
+    const tied = Array.from({ length: MAX_CONTEXT_LIMIT + 1 }, () =>
+      seed(project),
+    );
+    vi.setSystemTime(new Date('2026-11-05T00:00:01.000Z'));
+    const newest = seed(project);
+    seed(otherProject);
+
+    function expected(key: keyof typeof newest) {
+      return [
+        newest[key],
+        ...tied
+          .map((record) => record[key])
+          .sort()
+          .reverse()
+          .slice(0, MAX_CONTEXT_LIMIT - 1),
+      ];
+    }
+
+    const context = repos.context.get(
+      project,
+      contextCollections,
+      MAX_CONTEXT_LIMIT,
+    );
+    expect(context.claims?.map(({ claim_id }) => claim_id)).toEqual(
+      expected('claim_id'),
+    );
+    expect(
+      context.assumptions?.map(({ assumption_id }) => assumption_id),
+    ).toEqual(expected('assumption_id'));
+    expect(context.assumption_events?.map(({ event_id }) => event_id)).toEqual(
+      expected('event_id'),
+    );
+    expect(context.evidence?.map(({ evidence_id }) => evidence_id)).toEqual(
+      expected('evidence_id'),
+    );
+    expect(context.reviews?.map(({ review_id }) => review_id)).toEqual(
+      expected('review_id'),
+    );
+    expect(repos.context.get(project, ['reviews'], 1)).toEqual({
+      project_id: project,
+      reviews: [
+        {
+          review_id: newest.review_id,
+          target_type: 'claim',
+          status: 'unverified',
+          claim_id: newest.claim_id,
+          decision: null,
+          policy_version: 'strict-1',
+          created_at: '2026-11-05T00:00:01.000Z',
+        },
+      ],
+    });
+    expect(() => repos.context.get(project, contextCollections, -1)).toThrow(
+      RangeError,
+    );
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('binds evidence text, normalizes provenance fields, and validates bounds', () => {

@@ -15,7 +15,10 @@ const toolNames = [
   'cortex_health',
   'cortex_create_claim',
   'cortex_add_evidence',
+  'cortex_track_assumption',
+  'cortex_update_assumption',
   'cortex_review',
+  'cortex_get_context',
 ];
 
 test('an MCP client discovers and calls the health tool over stdio', async () => {

@@ -2,6 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { Project, ProjectPolicy } from '../../core/models.js';
 import { assumptionRepository } from './assumptions.js';
 import { claimRepository, evidenceRepository } from './claims.js';
+import { contextRepository } from './context.js';
 import { reviewRepository } from './reviews.js';
 
 export function createRepositories(db: DatabaseSync) {
@@ -26,5 +27,6 @@ export function createRepositories(db: DatabaseSync) {
     evidence: evidenceRepository(db),
     assumptions: assumptionRepository(db),
     reviews: reviewRepository(db),
+    context: contextRepository(db),
   };
 }
