@@ -31,24 +31,34 @@ type FindingRow = Omit<ReviewFinding, 'record_ids'> & { record_ids: string };
 export function reviewRepository(db: DatabaseSync) {
   const repository = {
     save(projectId: string, input: ReviewInput): Review {
-      const id = randomUUID();
-      const now = new Date().toISOString();
-      const claimIds =
-        input.target_type === 'claim' ? [input.claim_id] : input.claim_ids;
-      const evaluated = new Set<string>();
-      const claimEvaluations = input.claim_evaluations.map(
-        ({ claim_id, state, assurance, criteria_satisfied_as_reported }) => {
-          if (!claimIds.includes(claim_id) || evaluated.has(claim_id)) {
-            throw new Error(
-              'Each claim evaluation must reference a distinct review claim',
-            );
-          }
-          evaluated.add(claim_id);
-          return { claim_id, state, assurance, criteria_satisfied_as_reported };
-        },
-      );
+      return repository.saveFromSnapshot(projectId, () => input);
+    },
 
+    saveFromSnapshot(projectId: string, evaluate: () => ReviewInput): Review {
       return inTransaction(db, () => {
+        const input = evaluate();
+        const id = randomUUID();
+        const now = new Date().toISOString();
+        const claimIds =
+          input.target_type === 'claim' ? [input.claim_id] : input.claim_ids;
+        const evaluated = new Set<string>();
+        const claimEvaluations = input.claim_evaluations.map(
+          ({ claim_id, state, assurance, criteria_satisfied_as_reported }) => {
+            if (!claimIds.includes(claim_id) || evaluated.has(claim_id)) {
+              throw new Error(
+                'Each claim evaluation must reference a distinct review claim',
+              );
+            }
+            evaluated.add(claim_id);
+            return {
+              claim_id,
+              state,
+              assurance,
+              criteria_satisfied_as_reported,
+            };
+          },
+        );
+
         db.prepare(
           `
           INSERT INTO reviews

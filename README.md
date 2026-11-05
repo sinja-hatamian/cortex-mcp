@@ -2,7 +2,7 @@
 
 Cortex MCP aims to help AI agents make claims accountable to evidence. The project is designed to record verification criteria, evidence provenance, assumptions, and review findings locally.
 
-The stdio server lets clients register claims and record evidence. Call `cortex_health` with `{}` to check that the server is responding. The health tool runs without opening a database. Review and verification are planned in the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md).
+The stdio server lets clients register claims, record evidence, and review claims or proposed decisions. Call `cortex_health` with `{}` to check that the server is responding. The health tool runs without opening a database. See the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md) for the full roadmap.
 
 ## Build locally
 
@@ -75,7 +75,39 @@ Call `cortex_add_evidence` with the same project ID. Replace the example UUIDs w
 
 `relation` accepts `supports`, `contradicts`, or `neutral`. `origin` defaults to `agent_reported` and also accepts `user_attested` or `tool_output_recorded`. `source_type` accepts `test`, `build`, `log`, `document`, `manual_observation`, or `other`. `source_ref`, `collector`, and a 64-character hexadecimal SHA-256 `artifact_digest` are optional.
 
-The tool returns `evidence_id`, recorded `provenance`, and `assurance: "unverified_origin"`. A supplied digest sets `integrity_status` to `digest_recorded`. The caller supplies both the origin and the digest, so neither establishes independent collection. Evidence registration leaves the claim unverified. Missing and out-of-scope claim or criterion IDs return the same `INVALID_REFERENCE` error.
+The tool returns `evidence_id`, recorded `provenance`, and `assurance: "unverified_origin"`. A supplied digest sets `integrity_status` to `digest_recorded`. The caller supplies both the origin and the digest, so neither establishes independent collection. To evaluate the claim after registering evidence, call `cortex_review`. Missing and out-of-scope claim or criterion IDs return the same `INVALID_REFERENCE` error.
+
+## Review a claim or decision
+
+Call `cortex_review` with `target_type: "claim"` and the claim ID as `target_id`.
+
+```json
+{
+  "project_id": "example-api",
+  "target_type": "claim",
+  "target_id": "20ca80ac-856d-419c-acfb-09861cbba83f"
+}
+```
+
+For a decision, use `target_type: "decision"`, a `decision` statement, and at least one ID in `claim_ids` or `assumption_ids`. Each list accepts up to 16 unique IDs. The tool evaluates the referenced records in the given project and saves a new snapshot. The response includes `review_id`, `policy_version`, `status`, `claim_evaluations`, and ordered `findings`.
+
+New projects use `strict-1`. This policy treats caller-supplied evidence as reported and leaves claims unverified. Projects provisioned with the provisional policy use `provisional-1`. It admits `user_attested` and `tool_output_recorded` records for provisional results. A verified claim requires admissible support linked to every required criterion. Admissible evidence linked to a required criterion takes precedence when it contradicts that criterion. Both `verified` and `contradicted` carry `assurance: "provisional"` under that policy.
+
+`criteria_satisfied_as_reported` tracks positive coverage separately. It is true when every required criterion has a linked supporting report, including when other records contradict that support. Neutral or unlinked records provide no criterion coverage. Review uses the relation recorded by the caller and the project policy.
+
+Decision reviews are advisory and cover the referenced records. A contradicted claim or a refuted assumption yields `blocked_recommendation`. Other warnings yield `warning`. A review with no such findings yields `pass_with_caveats`.
+
+| Rule                        | When it applies                                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MISSING_REQUIRED_EVIDENCE` | A required criterion lacks linked supporting evidence, or the claim has no required criteria.                                                     |
+| `UNVERIFIED_CLAIM`          | The claim evaluates to `unverified` under the current policy.                                                                                     |
+| `CONTRADICTORY_EVIDENCE`    | Evidence is recorded as contradicting. An admissible contradiction linked to a required criterion is an error. Other contradictions are warnings. |
+| `REFUTED_ASSUMPTION`        | A referenced assumption is recorded as refuted.                                                                                                   |
+| `UNRESOLVED_ASSUMPTION`     | A referenced assumption is recorded as unverified or inconclusive.                                                                                |
+| `REPORTED_ONLY_EVIDENCE`    | Supporting or contradicting records are outside the policy's admissible origins.                                                                  |
+| `INVALID_REFERENCE`         | A project, claim, or assumption reference is missing or out of scope. The tool returns an error before saving a review.                           |
+
+Findings sort by severity, rule ID, and record IDs. Grouped evidence findings report the total and include up to three matching evidence IDs. Later evidence or assumption updates leave saved reviews intact.
 
 ## Local storage
 
@@ -101,7 +133,7 @@ pnpm build
 pnpm test
 ```
 
-The protocol tests launch the built CLI over stdio and check tool discovery, claim creation, evidence registration, and safe input errors. The storage tests use temporary SQLite databases to check migrations, project isolation, atomic writes, and persistence across processes.
+The protocol tests launch the built CLI over stdio and check tool discovery, claim and evidence registration, reviews, and safe input errors. Unit tests exercise policy and rule ordering. Storage tests use temporary SQLite databases to check migrations, project isolation, atomic writes, and persistence across processes.
 
 ## License
 

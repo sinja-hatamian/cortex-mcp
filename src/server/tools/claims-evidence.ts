@@ -7,22 +7,7 @@ import {
 } from '../../schemas/claims-evidence.js';
 import { isForeignKeyViolation } from '../../storage/db.js';
 import type { createRepositories } from '../../storage/repositories/index.js';
-
-function toolResult(structuredContent: Record<string, unknown>) {
-  return {
-    structuredContent,
-    content: [
-      { type: 'text' as const, text: JSON.stringify(structuredContent) },
-    ],
-  };
-}
-
-function toolError(
-  code: 'INVALID_REFERENCE' | 'STORAGE_ERROR',
-  message: string,
-) {
-  return { ...toolResult({ code, message }), isError: true };
-}
+import { toolError, toolResult } from './results.js';
 
 export function registerClaimEvidenceTools(
   server: McpServer,

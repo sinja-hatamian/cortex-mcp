@@ -2,15 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { Client } from '@modelcontextprotocol/client';
-import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
+import type { Client } from '@modelcontextprotocol/client';
 import { afterEach, expect, test } from 'vitest';
 import { createClaimOutput } from '../../src/schemas/claims-evidence.js';
 import { openDatabase } from '../../src/storage/db.js';
 import { createRepositories } from '../../src/storage/repositories/index.js';
+import { withClient } from './client.js';
 
-const cli = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
 const tempRoots: string[] = [];
 const claimInput = {
   project_id: 'example-api',
@@ -44,26 +42,6 @@ afterEach(async () => {
       .map((root) => rm(root, { recursive: true, force: true })),
   );
 });
-
-async function withClient<T>(
-  cwd: string,
-  run: (client: Client) => Promise<T>,
-  dataDir = join(cwd, 'data'),
-): Promise<T> {
-  const client = new Client({ name: 'cortex-tools-test', version: '1.0.0' });
-  const transport = new StdioClientTransport({
-    command: process.execPath,
-    args: [cli],
-    cwd,
-    env: { CORTEX_DATA_DIR: dataDir },
-  });
-  try {
-    await client.connect(transport);
-    return await run(client);
-  } finally {
-    await transport.close();
-  }
-}
 
 async function createClaim(client: Client, projectId = claimInput.project_id) {
   const result = await client.callTool({

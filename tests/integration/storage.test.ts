@@ -295,6 +295,31 @@ test('rolls back incomplete claims, assumption transitions, and review snapshots
   ).toEqual({ count: 0 });
 });
 
+test('review snapshot reads and persistence share a transaction that excludes competing writes', () => {
+  const env = storageEnv();
+  using db = openDatabase(env);
+  using writer = new DatabaseSync(
+    join(resolveDataDirectory(env), 'cortex.sqlite3'),
+  );
+  const repos = createRepositories(db);
+  const competing = createRepositories(writer);
+  repos.projects.create(project);
+  const claim = repos.claims.create(project, 'Protected routes', [criterion]);
+
+  const review = repos.reviews.saveFromSnapshot(project, () => {
+    expect(db.isTransaction).toBe(true);
+    expect(() =>
+      competing.evidence.add(project, reportedEvidence(claim.id)),
+    ).toThrow(/locked/i);
+    expect(repos.evidence.listForClaim(project, claim.id)).toEqual([]);
+    return claimReview(claim.id);
+  });
+
+  expect(db.isTransaction).toBe(false);
+  competing.evidence.add(project, reportedEvidence(claim.id));
+  expect(repos.reviews.find(project, review.id)).toEqual(review);
+});
+
 test('binds evidence text, normalizes provenance fields, and validates bounds', () => {
   using db = openDatabase(storageEnv());
   const repos = createRepositories(db);

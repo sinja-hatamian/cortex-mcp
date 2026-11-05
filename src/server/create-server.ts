@@ -4,6 +4,7 @@ import packageInfo from '../../package.json' with { type: 'json' };
 import { openDatabase } from '../storage/db.js';
 import { createRepositories } from '../storage/repositories/index.js';
 import { registerClaimEvidenceTools } from './tools/claims-evidence.js';
+import { registerReviewTool } from './tools/review.js';
 
 export function createServer(): McpServer {
   const server = new McpServer({
@@ -23,11 +24,13 @@ export function createServer(): McpServer {
   let db: ReturnType<typeof openDatabase> | undefined;
   let repositories: ReturnType<typeof createRepositories> | undefined;
   let closed = false;
-  registerClaimEvidenceTools(server, () => {
+  const getRepositories = () => {
     if (closed) throw new Error('Cortex MCP session is closed');
     db ??= openDatabase();
     return (repositories ??= createRepositories(db));
-  });
+  };
+  registerClaimEvidenceTools(server, getRepositories);
+  registerReviewTool(server, getRepositories);
   server.server.onclose = () => {
     closed = true;
     db?.close();
