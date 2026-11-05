@@ -1,8 +1,8 @@
 {
   "name": "cortex-mcp-foundation",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Local MCP server foundation for evidence-backed verification.",
+  "description": "Local MCP server for evidence-backed claim verification and decision reviews.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -19,6 +19,9 @@
     "build": "tsc -p tsconfig.build.json",
     "format:check": "prettier --check .",
     "lint": "eslint .",
+    "benchmark": "node scripts/benchmark.mjs",
+    "smoke:auth": "node examples/authentication-verification.mjs",
+    "smoke:package": "node scripts/smoke-package.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

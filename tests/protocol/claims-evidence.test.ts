@@ -159,6 +159,7 @@ test('rejects invalid tool input before creating a database', async () => {
   await withClient(root, async (client) => {
     for (const invalid of [
       { criteria: [] },
+      { criteria: [{ ...claimInput.criteria[0], required: false }] },
       { criteria: [claimInput.criteria[0], claimInput.criteria[0]] },
       {
         criteria: Array.from({ length: 33 }, (_, i) => ({

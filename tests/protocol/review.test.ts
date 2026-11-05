@@ -129,6 +129,37 @@ test('strict review snapshots survive restart and later evidence leaves prior fi
   }
 });
 
+test('legacy claims with only optional criteria can still be recovered and reviewed', async () => {
+  const claim = (() => {
+    using db = openTestDatabase();
+    const repos = createRepositories(db);
+    repos.projects.create(project);
+    return repos.claims.create(project, 'Legacy claim', [
+      { ...criterion, required: false },
+    ]);
+  })();
+
+  await withClient(root, async (client) => {
+    const context = await client.callTool({
+      name: 'cortex_get_context',
+      arguments: { project_id: project, include: ['claims'] },
+    });
+    expect(context.isError).not.toBe(true);
+    expect(context.structuredContent).toMatchObject({
+      claims: [{ claim_id: claim.id, criteria: [{ required: false }] }],
+    });
+    expect(
+      await review(client, { target_type: 'claim', target_id: claim.id }),
+    ).toMatchObject({
+      status: 'unverified',
+      findings: [
+        { rule_id: 'MISSING_REQUIRED_EVIDENCE' },
+        { rule_id: 'UNVERIFIED_CLAIM' },
+      ],
+    });
+  });
+});
+
 test('provisional decisions report assurance and recommend blocking for refuted assumptions or contradictions', async () => {
   const assumption = (() => {
     using db = openTestDatabase();

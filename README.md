@@ -1,6 +1,6 @@
 # Cortex MCP
 
-Cortex MCP aims to help AI agents make claims accountable to evidence. The project is designed to record verification criteria, evidence provenance, assumptions, and review findings locally.
+Cortex MCP helps AI agents make claims accountable to evidence. It records verification criteria, evidence provenance, assumptions, and deterministic review findings locally.
 
 The stdio server lets clients register claims, record evidence, track assumptions, review claims or proposed decisions, and recover project context. Call `cortex_health` with `{}` to check that the server is responding. The health tool runs without opening a database. See the [project brief](CORTEX_MCP_CODEX_BRIEF_V2.md) for the full roadmap.
 
@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-The build produces `dist/cli.js`, which an MCP client launches with `node` over stdio. Cortex runs locally without a cloud account or API key. Stdout carries MCP messages.
+The build produces `dist/cli.js`, which an MCP client launches with `node` over stdio. Dependency installation uses the npm registry. After installation, Cortex runs locally without network access, a cloud account, or an API key. Stdout carries MCP messages.
 
 ## Connect a client
 
@@ -39,7 +39,7 @@ npx --yes @modelcontextprotocol/inspector@2.14.0 --cli node dist/cli.js --method
 
 ## Register claims and evidence
 
-Call `cortex_create_claim` with an explicit project ID, a statement, and 1 to 32 criteria. Criterion keys must be unique within the claim.
+Call `cortex_create_claim` with an explicit project ID, a statement, and 1 to 32 criteria. Criterion keys must be unique within the claim, and at least one criterion must be required.
 
 ```json
 {
@@ -149,6 +149,14 @@ Set `CORTEX_DATA_DIR` to an absolute directory path to override the default. On 
 
 Project IDs provide logical isolation within a database. They do not authenticate callers. Evidence provenance records the claimed origin, and a recorded digest captures the supplied value. Reviews store their findings and claim evaluations as snapshots.
 
+To remove local Cortex data, close every client using the database. Back up `cortex.sqlite3` and any associated SQLite sidecar files if you want to keep a copy, then delete those files from the configured directory. If you use a shared data directory, leave its other files in place.
+
+## Example and limitations
+
+Run the [authentication verification example](examples/authentication-verification.md) to see a missing-evidence warning, caller-reported coverage, an advisory blocked recommendation, and recovery after reconnecting.
+
+Cortex evaluates explicit relationships and caller-reported observations under the project policy. It has no trusted collector in this version. A client can fabricate or omit records, and verification under a policy carries the assurance shown in the result. See [security and trust](SECURITY.md) for reporting and data handling.
+
 ## Run the checks
 
 ```sh
@@ -157,9 +165,14 @@ pnpm lint
 pnpm typecheck
 pnpm build
 pnpm test
+pnpm smoke:auth
+pnpm smoke:package
+pnpm benchmark
 ```
 
 The protocol tests launch the built CLI over stdio and check registration, reviews, assumption updates, context recovery, and safe input errors. Unit tests exercise policy and rule ordering. Storage tests use temporary SQLite databases to check migrations, bounded retrieval, project isolation, atomic writes, and persistence across processes.
+
+The package smoke test installs a local tarball in a fresh temporary project and runs the example with runtime network access denied. The benchmark reports rule outcomes and timing on synthetic fixtures. See the [contribution guide](CONTRIBUTING.md) and [release checklist](docs/release-checklist.md).
 
 ## License
 

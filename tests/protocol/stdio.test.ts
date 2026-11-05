@@ -49,9 +49,10 @@ test('an MCP client discovers and calls the health tool over stdio', async () =>
 
     const invalid = await client.callTool({
       name: 'cortex_health',
-      arguments: { unexpected: true },
+      arguments: { sensitive_field_name: true },
     });
     expect(invalid.isError).toBe(true);
+    expect(JSON.stringify(invalid)).not.toContain('sensitive_field_name');
   } finally {
     await transport.close();
     expect(await readdir(cwd)).toEqual([]);
@@ -63,6 +64,10 @@ test('stdout carries only MCP responses and stdin EOF ends the CLI', async () =>
   const child = spawn(process.execPath, [cli], { timeout: 4_000 });
   const closed = once(child, 'close');
   const stdout = createInterface({ input: child.stdout });
+  let stderr = '';
+  child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
+    stderr += chunk;
+  });
   const lines = stdout[Symbol.asyncIterator]();
   const send = (message: object) => {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`);
@@ -93,6 +98,8 @@ test('stdout carries only MCP responses and stdin EOF ends the CLI', async () =>
       },
     });
 
+    child.stdin.write('malformed-sensitive-input\n');
+    child.stdin.write('{"jsonrpc":"2.0","sensitive_field_name":true}\n');
     send({ method: 'notifications/initialized' });
     send({ id: 2, method: 'tools/list' });
     expect(await readResponse()).toMatchObject({
@@ -115,6 +122,9 @@ test('stdout carries only MCP responses and stdin EOF ends the CLI', async () =>
     child.stdin.end();
     expect((await lines.next()).done).toBe(true);
     expect(await closed).toEqual([0, null]);
+    expect(stderr).toBe(
+      'Cortex MCP encountered a stdio protocol or transport error.\n',
+    );
   } finally {
     stdout.close();
     child.kill();

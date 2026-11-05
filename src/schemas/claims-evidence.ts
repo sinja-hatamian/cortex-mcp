@@ -60,7 +60,10 @@ export const createClaimInput = z.strictObject(
         (criteria) =>
           new Set(criteria.map(({ key }) => key)).size === criteria.length,
         { error: 'Criterion keys must be unique within a claim' },
-      ),
+      )
+      .refine((criteria) => criteria.some(({ required }) => required), {
+        error: 'A claim must have at least one required criterion',
+      }),
   },
   objectOptions,
 );

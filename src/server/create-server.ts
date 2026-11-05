@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
 import packageInfo from '../../package.json' with { type: 'json' };
+import { objectOptions } from '../schemas/fields.js';
 import { openDatabase } from '../storage/db.js';
 import { createRepositories } from '../storage/repositories/index.js';
 import { registerAssumptionTools } from './tools/assumptions.js';
@@ -18,7 +19,7 @@ export function createServer(): McpServer {
     'cortex_health',
     {
       description: 'Check that the Cortex MCP server is responding.',
-      inputSchema: z.strictObject({}),
+      inputSchema: z.strictObject({}, objectOptions),
     },
     () => ({ content: [{ type: 'text', text: 'ok' }] }),
   );
