@@ -325,7 +325,8 @@ test('review snapshot reads and persistence share a transaction that excludes co
 });
 
 test('context limits each collection, orders timestamp ties by ID, and excludes other projects', () => {
-  using db = openDatabase(storageEnv());
+  using db = new DatabaseSync(':memory:');
+  migrate(db);
   const repos = createRepositories(db);
   repos.projects.create(project);
   repos.projects.create(otherProject);
