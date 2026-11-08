@@ -5,6 +5,7 @@ import type {
   CriterionInput,
   Evidence,
   ReviewTarget,
+  TestRun,
 } from './models.js';
 
 export const contextCollections = [
@@ -13,6 +14,7 @@ export const contextCollections = [
   'assumption_events',
   'evidence',
   'reviews',
+  'test_runs',
 ] as const;
 export const MAX_CONTEXT_LIMIT = 20;
 export type ContextCollection = (typeof contextCollections)[number];
@@ -50,4 +52,5 @@ export type ProjectContext = {
   assumption_events?: ContextEvent[];
   evidence?: ContextEvidence[];
   reviews?: ContextReview[];
+  test_runs?: TestRun[];
 };

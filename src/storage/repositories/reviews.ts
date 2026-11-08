@@ -43,7 +43,13 @@ export function reviewRepository(db: DatabaseSync) {
           input.target_type === 'claim' ? [input.claim_id] : input.claim_ids;
         const evaluated = new Set<string>();
         const claimEvaluations = input.claim_evaluations.map(
-          ({ claim_id, state, assurance, criteria_satisfied_as_reported }) => {
+          ({
+            claim_id,
+            state,
+            assurance,
+            criteria_satisfied_as_reported,
+            criterion_evaluations,
+          }) => {
             if (!claimIds.includes(claim_id) || evaluated.has(claim_id)) {
               throw new Error(
                 'Each claim evaluation must reference a distinct review claim',
@@ -55,6 +61,7 @@ export function reviewRepository(db: DatabaseSync) {
               state,
               assurance,
               criteria_satisfied_as_reported,
+              criterion_evaluations,
             };
           },
         );

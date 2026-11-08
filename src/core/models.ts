@@ -60,6 +60,17 @@ export type Evidence = ProjectRecord &
     integrity_status: 'unverified' | 'digest_recorded';
   };
 
+export type TestRun = {
+  run_id: string;
+  claim_id: string;
+  criterion_id: string;
+  revision: string;
+  node_version: string;
+  test_paths: readonly string[];
+  exit_code: number;
+  created_at: string;
+};
+
 export type AssumptionStatus =
   'unverified' | 'supported' | 'refuted' | 'inconclusive';
 
@@ -86,11 +97,26 @@ export type AssumptionEvent = ProjectRecord & {
 
 export type ClaimState = 'unverified' | 'verified' | 'contradicted';
 
+export const criterionOutcomes = [
+  'conflicting_reports',
+  'reported_failure',
+  'missing_evidence',
+  'unverified_source',
+  'supported',
+] as const;
+
+export type CriterionEvaluation = {
+  outcome: (typeof criterionOutcomes)[number];
+  criterion_id: string;
+  key: string;
+};
+
 export type ClaimEvaluation = {
   claim_id: string;
   state: ClaimState;
   assurance?: 'reported_only' | 'provisional';
   criteria_satisfied_as_reported: boolean;
+  criterion_evaluations?: readonly CriterionEvaluation[];
 };
 
 export type ReviewTarget =

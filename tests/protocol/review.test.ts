@@ -83,7 +83,17 @@ test('strict review snapshots survive restart and later evidence leaves prior fi
       status: 'unverified',
       policy_version: 'strict-1',
       claim_evaluations: [
-        { state: 'unverified', criteria_satisfied_as_reported: false },
+        {
+          state: 'unverified',
+          criteria_satisfied_as_reported: false,
+          criterion_evaluations: [
+            {
+              outcome: 'missing_evidence',
+              criterion_id: claim.criteria[0].criterion_id,
+              key: criterion.key,
+            },
+          ],
+        },
       ],
       findings: [
         { rule_id: 'MISSING_REQUIRED_EVIDENCE' },
@@ -108,6 +118,13 @@ test('strict review snapshots survive restart and later evidence leaves prior fi
         state: 'unverified',
         criteria_satisfied_as_reported: true,
         assurance: 'reported_only',
+        criterion_evaluations: [
+          {
+            outcome: 'unverified_source',
+            criterion_id: claim.criteria[0].criterion_id,
+            key: criterion.key,
+          },
+        ],
       },
     ],
     findings: [
@@ -193,6 +210,13 @@ test('provisional decisions report assurance and recommend blocking for refuted 
           claim_id: claim.claim_id,
           state: 'verified',
           assurance: 'provisional',
+          criterion_evaluations: [
+            {
+              outcome: 'supported',
+              criterion_id: claim.criteria[0].criterion_id,
+              key: criterion.key,
+            },
+          ],
         },
       ],
       findings: [],
@@ -220,6 +244,13 @@ test('provisional decisions report assurance and recommend blocking for refuted 
           state: 'contradicted',
           assurance: 'provisional',
           criteria_satisfied_as_reported: true,
+          criterion_evaluations: [
+            {
+              outcome: 'conflicting_reports',
+              criterion_id: claim.criteria[0].criterion_id,
+              key: criterion.key,
+            },
+          ],
         },
       ],
       findings: [{ rule_id: 'CONTRADICTORY_EVIDENCE', severity: 'error' }],

@@ -1,0 +1,1284 @@
+{
+  "metadata": {
+    "model": "gpt-6.1-sol",
+    "cli_version": "codex-cli 0.166.0-alpha.5.1",
+    "node_version": "v26.13.0",
+    "server_build_sha256": "3b5616dabc6964451e93c05d8b771d49b130310a454a13bf4ab0248d18d6b6a7",
+    "session_timeout_ms": 180000,
+    "task_count": 10,
+    "conditions": ["baseline", "cortex_available"],
+    "repetitions": 1
+  },
+  "observations": [
+    {
+      "task": "tenant-access",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 32356.987542,
+      "final": {
+        "completed": true,
+        "summary": "Fixed read to return the first document matching both ID and user tenant, preserving stored object identity and the public API. Added regression tests.",
+        "checks_run": [
+          "npm test: all 4 tests passed",
+          "Provided smoke test command: passed",
+          "git diff --check: passed"
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 61483,
+        "cached_input_tokens": 45184,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 808,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 5,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A user can read their own tenant’s document",
+            "passed": true
+          },
+          {
+            "name": "A user cannot read another tenant’s document",
+            "passed": true
+          },
+          {
+            "name": "Search past a foreign document with the same ID",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex f1e2e7e..72c4b1f 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,2 @@\n-export const read = (docs, user, id) => docs.find(doc => doc.id === id);\n\\ No newline at end of file\n+export const read = (docs, user, id) =>\n+  docs.find(doc => doc.id === id && doc.tenant === user.tenant);",
+      "untracked": "test/tenant-access.test.mjs"
+    },
+    {
+      "task": "tenant-access",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 32793.325915999994,
+      "final": {
+        "completed": true,
+        "summary": "Fixed read to return the first document matching both ID and user tenant, preserving stored object identity and the public API. Added regression tests.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "npm test: all 3 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 62964,
+        "cached_input_tokens": 46336,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 824,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 5,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A user can read their own tenant’s document",
+            "passed": true
+          },
+          {
+            "name": "A user cannot read another tenant’s document",
+            "passed": true
+          },
+          {
+            "name": "Search past a foreign document with the same ID",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex f1e2e7e..72c4b1f 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,2 @@\n-export const read = (docs, user, id) => docs.find(doc => doc.id === id);\n\\ No newline at end of file\n+export const read = (docs, user, id) =>\n+  docs.find(doc => doc.id === id && doc.tenant === user.tenant);",
+      "untracked": "test/tenant-access.test.mjs"
+    },
+    {
+      "task": "retry-idempotency",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 38263.31666699999,
+      "final": {
+        "completed": true,
+        "summary": "Updated submit to skip existing keys, preserving original amounts. Added regression tests for retries, independent keys, and separate payment collections. Public API and existing tests remain unchanged.",
+        "checks_run": [
+          "Smoke test: 1 passed.",
+          "Full test suite: 4 passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 63104,
+        "cached_input_tokens": 46592,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 915,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 3,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A new payment is stored",
+            "passed": true
+          },
+          {
+            "name": "A retry cannot store a second payment",
+            "passed": true
+          },
+          {
+            "name": "Retries preserve the first amount and independent keys",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 2949c3e..b7a9640 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,4 @@\n-export const submit = (payments, key, amount) => payments.push({ key, amount });\n\\ No newline at end of file\n+export const submit = (payments, key, amount) => {\n+  if (payments.some(payment => payment.key === key)) return;\n+  return payments.push({ key, amount });\n+};",
+      "untracked": "test/idempotency.test.mjs"
+    },
+    {
+      "task": "retry-idempotency",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 35544.690333000006,
+      "final": {
+        "completed": true,
+        "summary": "Updated submit to append each key only once while preserving its original amount. Preserved the public API and existing tests; added regression coverage.",
+        "checks_run": [
+          "Provided smoke test command: passed",
+          "npm test: all 3 tests passed",
+          "git diff --check: passed"
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 85625,
+        "cached_input_tokens": 63360,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 824,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 5,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A new payment is stored",
+            "passed": true
+          },
+          {
+            "name": "A retry cannot store a second payment",
+            "passed": true
+          },
+          {
+            "name": "Retries preserve the first amount and independent keys",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 2949c3e..98b1ece 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,5 @@\n-export const submit = (payments, key, amount) => payments.push({ key, amount });\n\\ No newline at end of file\n+export const submit = (payments, key, amount) => {\n+  if (!payments.some(payment => payment.key === key)) {\n+    payments.push({ key, amount });\n+  }\n+};",
+      "untracked": "test/idempotency.test.mjs"
+    },
+    {
+      "task": "cache-scope",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 31593.043458,
+      "final": {
+        "completed": true,
+        "summary": "Updated key(account, user) to encode both strings as a JSON array, preventing cross-account and delimiter collisions while preserving the public API. Added regression tests.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "npm test: all 3 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 61355,
+        "cached_input_tokens": 45056,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 773,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 5,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "Repeated reads in one account produce the same key",
+            "passed": true
+          },
+          {
+            "name": "The same user ID in two accounts has distinct keys",
+            "passed": true
+          },
+          {
+            "name": "Delimiter-containing pairs and empty strings stay distinct",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 40f685f..d50e024 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1 @@\n-export const key = (account, user) => JSON.stringify(user);\n\\ No newline at end of file\n+export const key = (account, user) => JSON.stringify([account, user]);",
+      "untracked": "test/key.test.mjs"
+    },
+    {
+      "task": "cache-scope",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 41586.053957999975,
+      "final": {
+        "completed": true,
+        "summary": "Updated key(account, user) to JSON-encode both strings as an ordered pair, preventing cross-account and delimiter collisions. Preserved the public API and existing tests; added regression coverage.",
+        "checks_run": [
+          "Provided smoke test: passed",
+          "Full Node test suite: 4 tests passed",
+          "npm test: 4 tests passed",
+          "git diff --check: passed"
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 133050,
+        "cached_input_tokens": 121984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1001,
+        "reasoning_output_tokens": 24
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 7,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "Repeated reads in one account produce the same key",
+            "passed": true
+          },
+          {
+            "name": "The same user ID in two accounts has distinct keys",
+            "passed": true
+          },
+          {
+            "name": "Delimiter-containing pairs and empty strings stay distinct",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 40f685f..d50e024 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1 @@\n-export const key = (account, user) => JSON.stringify(user);\n\\ No newline at end of file\n+export const key = (account, user) => JSON.stringify([account, user]);",
+      "untracked": "test/key.test.mjs"
+    },
+    {
+      "task": "pagination-ties",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 41464.33079199999,
+      "final": {
+        "completed": true,
+        "summary": "Fixed after() to compare numeric time, then numeric id, including timestamp ties while excluding the cursor. Preserved the public API, input order, object identity, and immutability. Added regression tests.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "npm test with provided Node: all 5 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 63318,
+        "cached_input_tokens": 59008,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1085,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 3,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A row with a later timestamp is returned",
+            "passed": true
+          },
+          {
+            "name": "The next ID at the same timestamp is returned without repeating the cursor",
+            "passed": true
+          },
+          {
+            "name": "Mixed cursor boundaries preserve original rows",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 40260e8..365bebf 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,4 @@\n-export const after = (rows, cursor) => rows.filter(row => row.time > cursor.time);\n\\ No newline at end of file\n+export const after = (rows, cursor) => rows.filter(row =>\n+  Number(row.time) > Number(cursor.time) ||\n+  (Number(row.time) === Number(cursor.time) && Number(row.id) > Number(cursor.id))\n+);",
+      "untracked": "test/pagination.test.mjs"
+    },
+    {
+      "task": "pagination-ties",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 42261.88687499997,
+      "final": {
+        "completed": true,
+        "summary": "Fixed after() to compare numeric time, then numeric id, including timestamp ties while excluding the cursor. Preserved row order, object identity, and the public API. Added regression tests.",
+        "checks_run": [
+          "Smoke and regression tests: 3 passed using the provided Node binary.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 77033,
+        "cached_input_tokens": 60672,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 961,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 4,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A row with a later timestamp is returned",
+            "passed": true
+          },
+          {
+            "name": "The next ID at the same timestamp is returned without repeating the cursor",
+            "passed": true
+          },
+          {
+            "name": "Mixed cursor boundaries preserve original rows",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 40260e8..31038f8 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,8 @@\n-export const after = (rows, cursor) => rows.filter(row => row.time > cursor.time);\n\\ No newline at end of file\n+export const after = (rows, cursor) => {\n+  const time = Number(cursor.time);\n+  const id = Number(cursor.id);\n+  return rows.filter(row => {\n+    const rowTime = Number(row.time);\n+    return rowTime > time || (rowTime === time && Number(row.id) > id);\n+  });\n+};",
+      "untracked": "test/pagination.test.mjs"
+    },
+    {
+      "task": "atomic-batch",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 41292.43825000001,
+      "final": {
+        "completed": true,
+        "summary": "Updated append to validate the entire batch before mutating the target, preserving the public API. Added regression tests for invalid items, empty batches, iterables, and self-appending.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "Full test suite via node: 5 passed.",
+          "npm test: 5 passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 78341,
+        "cached_input_tokens": 61824,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1037,
+        "reasoning_output_tokens": 14
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 4,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A valid batch is appended in order",
+            "passed": true
+          },
+          {
+            "name": "An invalid later item leaves the destination untouched",
+            "passed": true
+          },
+          {
+            "name": "Validation rejects the whole batch for each invalid item",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex f5dcd1b..ca16bda 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,8 @@\n-export function append(target, items) { for (const item of items) { if (!Number.isInteger(item) || item < 1) throw new Error(\"Invalid item\"); target.push(item); } }\n\\ No newline at end of file\n+export function append(target, items) {\n+  const batch = [];\n+  for (const item of items) {\n+    if (!Number.isInteger(item) || item < 1) throw new Error(\"Invalid item\");\n+    batch.push(item);\n+  }\n+  for (const item of batch) target.push(item);\n+}",
+      "untracked": "test/atomic.test.mjs"
+    },
+    {
+      "task": "atomic-batch",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 40750.771707999986,
+      "final": {
+        "completed": true,
+        "summary": "Made append atomic by validating the entire batch before modifying target. Preserved the public API and existing test; added regression coverage.",
+        "checks_run": [
+          "Smoke test command: 5 tests passed.",
+          "npm test: 5 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 110482,
+        "cached_input_tokens": 87552,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1057,
+        "reasoning_output_tokens": 35
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 5,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A valid batch is appended in order",
+            "passed": true
+          },
+          {
+            "name": "An invalid later item leaves the destination untouched",
+            "passed": true
+          },
+          {
+            "name": "Validation rejects the whole batch for each invalid item",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex f5dcd1b..ca16bda 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,8 @@\n-export function append(target, items) { for (const item of items) { if (!Number.isInteger(item) || item < 1) throw new Error(\"Invalid item\"); target.push(item); } }\n\\ No newline at end of file\n+export function append(target, items) {\n+  const batch = [];\n+  for (const item of items) {\n+    if (!Number.isInteger(item) || item < 1) throw new Error(\"Invalid item\");\n+    batch.push(item);\n+  }\n+  for (const item of batch) target.push(item);\n+}\ndiff --git a/test/smoke.test.mjs b/test/smoke.test.mjs\nindex e168cfe..6a4f711 100644\n--- a/test/smoke.test.mjs\n+++ b/test/smoke.test.mjs\n@@ -6,3 +6,35 @@ test(\"A valid batch is appended in order\", () => (({ append }) => {\n         append(target, [2, 3]);\n         assert.deepEqual(target, [1, 2, 3]);\n       })(candidate));\n+\n+test('An invalid item leaves the entire target untouched', () => {\n+  for (const invalid of [0, -1, 1.5, '2', null, undefined, true, {}, NaN, Infinity, -Infinity, 2n, Symbol('2')]) {\n+    for (const items of [[invalid, 2, 3], [2, invalid, 3], [2, 3, invalid]]) {\n+      const target = [7, 8];\n+      assert.throws(() => candidate.append(target, items), /Invalid item/);\n+      assert.deepEqual(target, [7, 8]);\n+    }\n+  }\n+});\n+\n+test('An empty batch succeeds without changing the target', () => {\n+  const target = [7];\n+  assert.equal(candidate.append(target, []), undefined);\n+  assert.deepEqual(target, [7]);\n+});\n+\n+test('A single-pass iterable is validated before appending', () => {\n+  function* items() {\n+    yield 2;\n+    yield 3;\n+  }\n+  const target = [1];\n+  candidate.append(target, items());\n+  assert.deepEqual(target, [1, 2, 3]);\n+});\n+\n+test('The target can also be the batch', () => {\n+  const target = [1, 2];\n+  candidate.append(target, target);\n+  assert.deepEqual(target, [1, 2, 1, 2]);\n+});",
+      "untracked": ""
+    },
+    {
+      "task": "asset-path",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 45869.830625,
+      "final": {
+        "completed": true,
+        "summary": "Fixed asset resolution to reject absolute names and paths escaping root, including siblings sharing its prefix. Preserved the public API and existing test; added regression coverage.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "npm test: all 5 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 110173,
+        "cached_input_tokens": 87296,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1110,
+        "reasoning_output_tokens": 63
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 6,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A nested relative path resolves inside the root",
+            "passed": true
+          },
+          {
+            "name": "Parent traversal and absolute paths are rejected",
+            "passed": true
+          },
+          {
+            "name": "Sibling prefixes and normalized traversal cannot escape",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 7058f71..27ff2a0 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,17 @@\n-import { posix } from \"node:path\"; export const asset = (root, name) => posix.resolve(root, name);\n\\ No newline at end of file\n+import { posix } from 'node:path';\n+\n+export const asset = (root, name) => {\n+  if (posix.isAbsolute(name)) {\n+    throw new Error('Asset name must be relative');\n+  }\n+\n+  const resolvedRoot = posix.resolve(root);\n+  const resolvedAsset = posix.resolve(resolvedRoot, name);\n+  const relative = posix.relative(resolvedRoot, resolvedAsset);\n+\n+  if (relative === '..' || relative.startsWith('../')) {\n+    throw new Error('Asset name must resolve within root');\n+  }\n+\n+  return resolvedAsset;\n+};",
+      "untracked": "test/asset.test.mjs"
+    },
+    {
+      "task": "asset-path",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 34067.99249999999,
+      "final": {
+        "completed": true,
+        "summary": "Updated asset() to reject absolute names and paths escaping root, including prefix-sharing siblings. Preserved public exports and added regression tests.",
+        "checks_run": [
+          "Provided Node smoke test command: 4 tests passed.",
+          "npm test using the provided Node toolchain: 4 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 85714,
+        "cached_input_tokens": 63360,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 923,
+        "reasoning_output_tokens": 23
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 5,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "A nested relative path resolves inside the root",
+            "passed": true
+          },
+          {
+            "name": "Parent traversal and absolute paths are rejected",
+            "passed": true
+          },
+          {
+            "name": "Sibling prefixes and normalized traversal cannot escape",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 7058f71..5a41c2f 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,17 @@\n-import { posix } from \"node:path\"; export const asset = (root, name) => posix.resolve(root, name);\n\\ No newline at end of file\n+import { posix } from 'node:path';\n+\n+export const asset = (root, name) => {\n+  if (posix.isAbsolute(name)) {\n+    throw new Error('Asset name must be relative');\n+  }\n+\n+  const resolvedRoot = posix.resolve(root);\n+  const resolvedAsset = posix.resolve(resolvedRoot, name);\n+  const relative = posix.relative(resolvedRoot, resolvedAsset);\n+\n+  if (relative === '..' || relative.startsWith('../')) {\n+    throw new Error('Asset path must remain within root');\n+  }\n+\n+  return resolvedAsset;\n+};\ndiff --git a/test/smoke.test.mjs b/test/smoke.test.mjs\nindex 915c84c..4b445ed 100644\n--- a/test/smoke.test.mjs\n+++ b/test/smoke.test.mjs\n@@ -7,3 +7,23 @@ test(\"A nested relative path resolves inside the root\", () => (({ asset }) => {\n           '/app/assets/images/logo.svg',\n         );\n       })(candidate));\n+\n+test('Absolute names are rejected even when they point inside root', () => {\n+  for (const name of ['/app/assets/logo.svg', '/elsewhere', '/', '//app/assets']) {\n+    assert.throws(() => candidate.asset('/app/assets', name));\n+  }\n+});\n+\n+test('Paths escaping root are rejected, including siblings sharing its prefix', () => {\n+  for (const name of ['..', '../logo.svg', '../assets-other/logo.svg', 'images/../../logo.svg']) {\n+    assert.throws(() => candidate.asset('/app/assets', name));\n+  }\n+});\n+\n+test('Relative paths may normalize within root or resolve to root itself', () => {\n+  assert.equal(candidate.asset('/app/assets/', 'images/../logo.svg'), '/app/assets/logo.svg');\n+  assert.equal(candidate.asset('/app/assets', '.'), '/app/assets');\n+  assert.equal(candidate.asset('/app/assets', ''), '/app/assets');\n+  assert.equal(candidate.asset('/app/assets', 'images/..'), '/app/assets');\n+  assert.equal(candidate.asset('/', 'images/logo.svg'), '/images/logo.svg');\n+});",
+      "untracked": ""
+    },
+    {
+      "task": "webhook-retry",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 32028.68083299999,
+      "final": {
+        "completed": true,
+        "summary": "Fixed retry(status) to return true only for 429 or 500–599 inclusive. Preserved public exports and existing tests; added regression coverage.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "Full test suite via Node: 3 tests passed.",
+          "npm test: 3 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 77427,
+        "cached_input_tokens": 60928,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 731,
+        "reasoning_output_tokens": 17
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 4,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "Rate limits and temporary server failures can be retried",
+            "passed": true
+          },
+          {
+            "name": "Authentication and malformed request errors are not retried",
+            "passed": true
+          },
+          {
+            "name": "Retry eligibility respects both server-error boundaries",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex d7b9b66..bf55717 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1 @@\n-export const retry = status => status >= 400;\n\\ No newline at end of file\n+export const retry = status => status === 429 || (status >= 500 && status <= 599);",
+      "untracked": "test/retry.test.mjs"
+    },
+    {
+      "task": "webhook-retry",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 28781.417000000016,
+      "final": {
+        "completed": true,
+        "summary": "Updated retry(status) to return true only for 429 or values from 500 through 599 inclusive. Preserved the public API and existing test, and added regression coverage.",
+        "checks_run": [
+          "Supplied smoke test command: all 3 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 62613,
+        "cached_input_tokens": 46208,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 640,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 4,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "Rate limits and temporary server failures can be retried",
+            "passed": true
+          },
+          {
+            "name": "Authentication and malformed request errors are not retried",
+            "passed": true
+          },
+          {
+            "name": "Retry eligibility respects both server-error boundaries",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex d7b9b66..bf55717 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1 @@\n-export const retry = status => status >= 400;\n\\ No newline at end of file\n+export const retry = status => status === 429 || (status >= 500 && status <= 599);\ndiff --git a/test/smoke.test.mjs b/test/smoke.test.mjs\nindex 3e3de98..839c561 100644\n--- a/test/smoke.test.mjs\n+++ b/test/smoke.test.mjs\n@@ -5,3 +5,15 @@ test(\"Rate limits and temporary server failures can be retried\", () => (({ retry\n         assert.equal(retry(429), true);\n         assert.equal(retry(503), true);\n       })(candidate));\n+\n+test('Only rate limits and statuses from 500 through 599 are retried', () => {\n+  for (let status = 100; status <= 699; status++) {\n+    assert.equal(candidate.retry(status), status === 429 || (status >= 500 && status <= 599), `status ${status}`);\n+  }\n+});\n+\n+test('Other numeric values are not retried', () => {\n+  for (const status of [-Infinity, -1, 0, 428.5, 429.5, 499.5, 599.5, 600, Infinity, NaN]) {\n+    assert.equal(candidate.retry(status), false, `status ${status}`);\n+  }\n+});",
+      "untracked": ""
+    },
+    {
+      "task": "log-redaction",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 39941.93775000004,
+      "final": {
+        "completed": true,
+        "summary": "Implemented recursive token removal from objects and arrays without mutating input. Preserved primitives, null, other properties, and the public API. Added regression tests.",
+        "checks_run": [
+          "Specified Node smoke test: 4 tests passed",
+          "npm test: 4 tests passed",
+          "git diff --check: passed"
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 109325,
+        "cached_input_tokens": 86400,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1102,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 5,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "The top-level token is removed and other fields are preserved",
+            "passed": true
+          },
+          {
+            "name": "Tokens nested in objects and arrays are removed",
+            "passed": true
+          },
+          {
+            "name": "Nested redaction preserves primitives and the input",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex cc89187..f140636 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,10 @@\n-export const redact = ({ token, ...rest }) => rest;\n\\ No newline at end of file\n+export const redact = (value) => {\n+  if (value === null || typeof value !== 'object') return value;\n+  if (Array.isArray(value)) return value.map(redact);\n+\n+  return Object.fromEntries(\n+    Object.entries(value)\n+      .filter(([key]) => key !== 'token')\n+      .map(([key, nested]) => [key, redact(nested)]),\n+  );\n+};\ndiff --git a/test/smoke.test.mjs b/test/smoke.test.mjs\nindex b11330d..ebd986e 100644\n--- a/test/smoke.test.mjs\n+++ b/test/smoke.test.mjs\n@@ -6,3 +6,43 @@ test(\"The top-level token is removed and other fields are preserved\", () => (({\n           event: 'login',\n         });\n       })(candidate));\n+\n+test('Tokens are removed from nested objects and arrays without mutating input', () => {\n+  const input = Object.freeze({\n+    token: 'root',\n+    event: 'login',\n+    details: Object.freeze({ token: 'nested', user: 'alice' }),\n+    items: Object.freeze([\n+      Object.freeze({ token: 'array-item', count: 2 }),\n+      Object.freeze([Object.freeze({ token: 'deep', ok: true }), null, 3]),\n+    ]),\n+  });\n+\n+  const output = candidate.redact(input);\n+  assert.deepEqual(output, {\n+    event: 'login',\n+    details: { user: 'alice' },\n+    items: [{ count: 2 }, [{ ok: true }, null, 3]],\n+  });\n+  assert.equal(input.token, 'root');\n+  assert.equal(input.details.token, 'nested');\n+  assert.equal(input.items[0].token, 'array-item');\n+  assert.notEqual(output.details, input.details);\n+  assert.notEqual(output.items, input.items);\n+});\n+\n+test('Primitives, null, and arrays are preserved', () => {\n+  for (const value of [null, undefined, true, false, 0, 42, '', 'token']) {\n+    assert.equal(candidate.redact(value), value);\n+  }\n+  assert.deepEqual(candidate.redact([null, 'text', false, { token: 'secret' }]), [\n+    null, 'text', false, {},\n+  ]);\n+});\n+\n+test('Only the exact token property is removed and special keys are preserved', () => {\n+  const input = JSON.parse('{\"token\":\"secret\",\"Token\":\"keep\",\"tokens\":[],\"__proto__\":{\"token\":\"secret\",\"safe\":1}}');\n+  const output = candidate.redact(input);\n+  assert.deepEqual(output, JSON.parse('{\"Token\":\"keep\",\"tokens\":[],\"__proto__\":{\"safe\":1}}'));\n+  assert.equal(Object.getPrototypeOf(output), Object.prototype);\n+});",
+      "untracked": ""
+    },
+    {
+      "task": "log-redaction",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 39091.35379099997,
+      "final": {
+        "completed": true,
+        "summary": "Implemented recursive token removal from objects and arrays without mutating inputs. Preserved primitives, null, and the public API. Added regression tests.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "Full test suite: 4 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 85646,
+        "cached_input_tokens": 63616,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 1126,
+        "reasoning_output_tokens": 23
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 3,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "The top-level token is removed and other fields are preserved",
+            "passed": true
+          },
+          {
+            "name": "Tokens nested in objects and arrays are removed",
+            "passed": true
+          },
+          {
+            "name": "Nested redaction preserves primitives and the input",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex cc89187..7e1c5ab 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,15 @@\n-export const redact = ({ token, ...rest }) => rest;\n\\ No newline at end of file\n+export const redact = (value) => {\n+  if (Array.isArray(value)) {\n+    return value.map(redact);\n+  }\n+\n+  if (value === null || typeof value !== 'object') {\n+    return value;\n+  }\n+\n+  return Object.fromEntries(\n+    Object.entries(value)\n+      .filter(([key]) => key !== 'token')\n+      .map(([key, entry]) => [key, redact(entry)]),\n+  );\n+};",
+      "untracked": "test/redact.test.mjs"
+    },
+    {
+      "task": "cart-quantity",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 31293.87379099999,
+      "final": {
+        "completed": true,
+        "summary": "Updated total(items) to sum cents × quantity without modifying items. Preserved the public API and existing test; added quantity, empty-cart, zero-quantity, and preservation tests.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "npm test: all 4 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 61237,
+        "cached_input_tokens": 41600,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 762,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 3,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "One unit of each item adds their cent amounts",
+            "passed": true
+          },
+          {
+            "name": "Multi-unit and zero-quantity rows use their quantity",
+            "passed": true
+          },
+          {
+            "name": "Empty and mixed-quantity carts keep cent arithmetic",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 7ec0054..ec4d261 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1 @@\n-export const total = items => items.reduce((sum, item) => sum + item.cents, 0);\n\\ No newline at end of file\n+export const total = items => items.reduce((sum, item) => sum + item.cents * item.quantity, 0);",
+      "untracked": "test/total.test.mjs"
+    },
+    {
+      "task": "cart-quantity",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 30010.14949999994,
+      "final": {
+        "completed": true,
+        "summary": "Updated total(items) to sum cents × quantity without modifying items. Preserved the public API and existing test; added quantity, empty-cart, zero-quantity, and immutability tests.",
+        "checks_run": [
+          "Provided smoke test: passed (1 test).",
+          "Full test suite via node --test test/*.test.mjs: passed (4 tests).",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 62351,
+        "cached_input_tokens": 58368,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 747,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 3,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "One unit of each item adds their cent amounts",
+            "passed": true
+          },
+          {
+            "name": "Multi-unit and zero-quantity rows use their quantity",
+            "passed": true
+          },
+          {
+            "name": "Empty and mixed-quantity carts keep cent arithmetic",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 7ec0054..ec4d261 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1 @@\n-export const total = items => items.reduce((sum, item) => sum + item.cents, 0);\n\\ No newline at end of file\n+export const total = items => items.reduce((sum, item) => sum + item.cents * item.quantity, 0);",
+      "untracked": "test/total.test.mjs"
+    },
+    {
+      "task": "search-normalization",
+      "condition": "cortex_available",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 38612.785166000016,
+      "final": {
+        "completed": true,
+        "summary": "Normalized both arguments to NFC for case-insensitive substring matching. Preserved accents, empty-query behavior, and public exports. Added Unicode regression tests.",
+        "checks_run": [
+          "Provided smoke test: passed (1 test).",
+          "npm test: passed (4 tests).",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 78778,
+        "cached_input_tokens": 74240,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 895,
+        "reasoning_output_tokens": 38
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 6,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "ASCII case differences do not affect matching",
+            "passed": true
+          },
+          {
+            "name": "A combining accent matches the equivalent precomposed label",
+            "passed": true
+          },
+          {
+            "name": "Normalization works in both directions without removing accents",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 2bdfb0e..caedd3b 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,3 @@\n-export const matches = (label, query) => label.toLowerCase().includes(query.toLowerCase());\n\\ No newline at end of file\n+const normalize = (text) => text.normalize('NFC').toLowerCase().normalize('NFC');\n+\n+export const matches = (label, query) => normalize(label).includes(normalize(query));",
+      "untracked": "test/unicode.test.mjs"
+    },
+    {
+      "task": "search-normalization",
+      "condition": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_ms": 36883.29958400002,
+      "final": {
+        "completed": true,
+        "summary": "Normalized both arguments to NFC before case-insensitive substring matching. Preserved the public API and added tests for Unicode equivalence, accent distinctions, and empty queries.",
+        "checks_run": [
+          "Provided smoke test: passed.",
+          "npm test: all 4 tests passed.",
+          "git diff --check: passed."
+        ],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 77480,
+        "cached_input_tokens": 73344,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 916,
+        "reasoning_output_tokens": 75
+      },
+      "completed_session": true,
+      "mcp_calls": [],
+      "command_count": 6,
+      "collector_commands": [],
+      "acceptance": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "ASCII case differences do not affect matching",
+            "passed": true
+          },
+          {
+            "name": "A combining accent matches the equivalent precomposed label",
+            "passed": true
+          },
+          {
+            "name": "Normalization works in both directions without removing accents",
+            "passed": true
+          }
+        ]
+      },
+      "false_completion": false,
+      "cortex_context": {
+        "project_id": "repair-task",
+        "claims": [],
+        "evidence": [],
+        "reviews": [],
+        "test_runs": []
+      },
+      "patch": "diff --git a/src/implementation.mjs b/src/implementation.mjs\nindex 2bdfb0e..26a0f60 100644\n--- a/src/implementation.mjs\n+++ b/src/implementation.mjs\n@@ -1 +1,2 @@\n-export const matches = (label, query) => label.toLowerCase().includes(query.toLowerCase());\n\\ No newline at end of file\n+export const matches = (label, query) =>\n+  label.normalize('NFC').toLowerCase().includes(query.normalize('NFC').toLowerCase());",
+      "untracked": "test/unicode.test.mjs"
+    }
+  ],
+  "analysis": {
+    "summary": {
+      "baseline": {
+        "sessions": 10,
+        "completed_sessions": 10,
+        "acceptance_passes": 10,
+        "declared_complete": 10,
+        "false_completions": 0,
+        "cortex_calls": 0,
+        "collector_commands": 0,
+        "receipts": 0,
+        "shell_commands": 44,
+        "median_seconds": 34.806341416500004,
+        "input_tokens": 751341,
+        "cached_input_tokens": 578944,
+        "uncached_input_tokens": 172397,
+        "output_tokens": 8861,
+        "uncommitted_patches": 10
+      },
+      "cortex_available": {
+        "sessions": 10,
+        "completed_sessions": 10,
+        "acceptance_passes": 10,
+        "declared_complete": 10,
+        "false_completions": 0,
+        "cortex_calls": 0,
+        "collector_commands": 0,
+        "receipts": 0,
+        "shell_commands": 47,
+        "median_seconds": 39.27736145800003,
+        "input_tokens": 856158,
+        "cached_input_tokens": 713984,
+        "uncached_input_tokens": 142174,
+        "output_tokens": 9376,
+        "uncommitted_patches": 10
+      }
+    },
+    "pairs": [
+      {
+        "task": "tenant-access",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 32.356987542,
+        "cortex_seconds": 32.79332591599999,
+        "seconds_difference": 0.43633837399999537,
+        "baseline_input_tokens": 61483,
+        "cortex_input_tokens": 62964
+      },
+      {
+        "task": "retry-idempotency",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 35.544690333000005,
+        "cortex_seconds": 38.26331666699999,
+        "seconds_difference": 2.718626333999986,
+        "baseline_input_tokens": 85625,
+        "cortex_input_tokens": 63104
+      },
+      {
+        "task": "cache-scope",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 31.593043458,
+        "cortex_seconds": 41.58605395799997,
+        "seconds_difference": 9.993010499999976,
+        "baseline_input_tokens": 61355,
+        "cortex_input_tokens": 133050
+      },
+      {
+        "task": "pagination-ties",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 42.261886874999966,
+        "cortex_seconds": 41.46433079199999,
+        "seconds_difference": -0.797556082999974,
+        "baseline_input_tokens": 77033,
+        "cortex_input_tokens": 63318
+      },
+      {
+        "task": "atomic-batch",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 41.292438250000004,
+        "cortex_seconds": 40.75077170799999,
+        "seconds_difference": -0.5416665420000208,
+        "baseline_input_tokens": 78341,
+        "cortex_input_tokens": 110482
+      },
+      {
+        "task": "asset-path",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 34.067992499999995,
+        "cortex_seconds": 45.869830625000006,
+        "seconds_difference": 11.801838125000009,
+        "baseline_input_tokens": 85714,
+        "cortex_input_tokens": 110173
+      },
+      {
+        "task": "webhook-retry",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 32.02868083299999,
+        "cortex_seconds": 28.781417000000015,
+        "seconds_difference": -3.2472638329999755,
+        "baseline_input_tokens": 77427,
+        "cortex_input_tokens": 62613
+      },
+      {
+        "task": "log-redaction",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 39.091353790999975,
+        "cortex_seconds": 39.941937750000044,
+        "seconds_difference": 0.8505839590000687,
+        "baseline_input_tokens": 85646,
+        "cortex_input_tokens": 109325
+      },
+      {
+        "task": "cart-quantity",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 31.293873790999992,
+        "cortex_seconds": 30.01014949999994,
+        "seconds_difference": -1.2837242910000495,
+        "baseline_input_tokens": 61237,
+        "cortex_input_tokens": 62351
+      },
+      {
+        "task": "search-normalization",
+        "baseline_passed": true,
+        "cortex_passed": true,
+        "baseline_seconds": 36.88329958400002,
+        "cortex_seconds": 38.612785166000016,
+        "seconds_difference": 1.729485581999994,
+        "baseline_input_tokens": 77480,
+        "cortex_input_tokens": 78778
+      }
+    ],
+    "median_paired_seconds_difference": 0.643461166500032,
+    "excluded_setup_sessions": 11,
+    "excluded_interrupted_sessions": 1,
+    "raw_run_directory": "/private/tmp/cortex-agent-pilot-20261108-valid",
+    "connection_check": {
+      "final": {
+        "completed": true,
+        "summary": "cortex_health succeeded: ok",
+        "checks_run": ["Called cortex_health exactly once."],
+        "remaining_issues": []
+      },
+      "usage": {
+        "input_tokens": 44298,
+        "cached_input_tokens": 29056,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 131,
+        "reasoning_output_tokens": 0
+      },
+      "completed_session": true,
+      "mcp_calls": [
+        {
+          "server": "cortex",
+          "tool": "cortex_health",
+          "status": "completed"
+        }
+      ],
+      "command_count": 0,
+      "collector_commands": []
+    }
+  }
+}

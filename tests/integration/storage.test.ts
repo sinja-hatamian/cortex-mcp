@@ -10,6 +10,7 @@ import {
 } from '../../src/core/context.js';
 import type { EvidenceInput, ReviewInput } from '../../src/core/models.js';
 import { openDatabase, resolveDataDirectory } from '../../src/storage/db.js';
+import { initialSchema } from '../../src/storage/migrations/001-initial.js';
 import { migrate } from '../../src/storage/migrations/index.js';
 import { createRepositories } from '../../src/storage/repositories/index.js';
 
@@ -128,21 +129,37 @@ test('migrations produce the same schema, rerun safely, and reject a newer versi
     db.prepare('SELECT name, sql FROM sqlite_schema ORDER BY name').all();
 
   expect(first.prepare('PRAGMA user_version').get()).toEqual({
-    user_version: 1,
+    user_version: 2,
   });
   const initial = schema(first);
   expect(initial).toEqual(schema(second));
   migrate(first);
   expect(schema(first)).toEqual(initial);
 
-  first.exec('PRAGMA user_version = 2');
+  first.exec('PRAGMA user_version = 3');
   expect(() => migrate(first)).toThrow(
     'Unsupported Cortex database schema version',
   );
   expect(first.prepare('PRAGMA user_version').get()).toEqual({
-    user_version: 2,
+    user_version: 3,
   });
   expect(schema(first)).toEqual(initial);
+});
+
+test('upgrades a v1 database with existing claims and reviews', () => {
+  using db = new DatabaseSync(':memory:');
+  db.exec(initialSchema);
+  db.exec('PRAGMA user_version = 1');
+  const repos = createRepositories(db);
+  repos.projects.create(project);
+  const claim = repos.claims.create(project, 'Protected routes', [criterion]);
+  const review = repos.reviews.save(project, claimReview(claim.id));
+
+  migrate(db);
+  expect(db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 2 });
+  expect(repos.claims.find(project, claim.id)).toEqual(claim);
+  expect(repos.reviews.find(project, review.id)).toEqual(review);
+  expect(repos.testRuns.list(project, 1)).toEqual([]);
 });
 
 test('a failed migration rolls back its earlier tables and leaves the version alone', () => {
@@ -347,12 +364,21 @@ test('context limits each collection, orders timestamp ties by ID, and excludes 
     );
     const [event] = repos.assumptions.listEvents(projectId, assumption.id);
     const review = repos.reviews.save(projectId, claimReview(claim.id));
+    const run = repos.testRuns.save(projectId, {
+      claim_id: claim.id,
+      criterion_id: claim.criteria[0].id,
+      revision: 'a'.repeat(40),
+      node_version: process.version,
+      test_paths: ['route.test.mjs'],
+      exit_code: 0,
+    });
     return {
       claim_id: claim.id,
       evidence_id: evidence.id,
       assumption_id: assumption.id,
       event_id: event.id,
       review_id: review.id,
+      run_id: run.run_id,
     };
   }
 
@@ -396,6 +422,9 @@ test('context limits each collection, orders timestamp ties by ID, and excludes 
     );
     expect(context.reviews?.map(({ review_id }) => review_id)).toEqual(
       expected('review_id'),
+    );
+    expect(context.test_runs?.map(({ run_id }) => run_id)).toEqual(
+      expected('run_id'),
     );
     expect(repos.context.get(project, ['reviews'], 1)).toEqual({
       project_id: project,
@@ -465,7 +494,7 @@ test('binds evidence text, normalizes provenance fields, and validates bounds', 
   expect(repos.evidence.listForClaim(project, claim.id)).toHaveLength(2);
 });
 
-test('reopens all records in another process and preserves the original review snapshot', () => {
+test('reopens all records in another process and preserves the legacy review snapshot', () => {
   const env = storageEnv();
   const saved = (() => {
     using db = openDatabase(env);
@@ -554,7 +583,8 @@ test('reopens all records in another process and preserves the original review s
     },
   );
 
-  expect(JSON.parse(output)).toMatchObject({
+  const recovered = JSON.parse(output);
+  expect(recovered).toMatchObject({
     project: saved.p,
     claim: saved.claim,
     assumption: { id: saved.assumption.id, status: 'refuted' },
@@ -575,4 +605,7 @@ test('reopens all records in another process and preserves the original review s
     ],
     review: saved.review,
   });
+  expect(recovered.review.claim_evaluations).toEqual(
+    claimReview(saved.claim.id).claim_evaluations,
+  );
 });

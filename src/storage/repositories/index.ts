@@ -4,6 +4,7 @@ import { assumptionRepository } from './assumptions.js';
 import { claimRepository, evidenceRepository } from './claims.js';
 import { contextRepository } from './context.js';
 import { reviewRepository } from './reviews.js';
+import { testRunRepository } from './test-runs.js';
 
 export function createRepositories(db: DatabaseSync) {
   return {
@@ -27,6 +28,7 @@ export function createRepositories(db: DatabaseSync) {
     evidence: evidenceRepository(db),
     assumptions: assumptionRepository(db),
     reviews: reviewRepository(db),
+    testRuns: testRunRepository(db),
     context: contextRepository(db),
   };
 }

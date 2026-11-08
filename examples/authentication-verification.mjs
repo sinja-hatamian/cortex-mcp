@@ -83,6 +83,10 @@ export async function verifyAuthentication(withSession) {
       incomplete.claim_evaluations[0].criteria_satisfied_as_reported,
       false,
     );
+    assert.deepEqual(incomplete.claim_evaluations[0].criterion_evaluations, [
+      { ...denial, outcome: 'missing_evidence' },
+      { ...coverage, outcome: 'unverified_source' },
+    ]);
     assert.ok(
       incomplete.findings.some(
         ({ rule_id, record_ids }) =>
@@ -108,6 +112,10 @@ export async function verifyAuthentication(withSession) {
         state: 'unverified',
         criteria_satisfied_as_reported: true,
         assurance: 'reported_only',
+        criterion_evaluations: [coverage, denial].map((criterion) => ({
+          ...criterion,
+          outcome: 'unverified_source',
+        })),
       },
     ]);
 

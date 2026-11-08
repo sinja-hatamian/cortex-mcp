@@ -1,9 +1,11 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { inTransaction } from '../transaction.js';
 import { initialSchema } from './001-initial.js';
+import { testRunSchema } from './002-test-runs.js';
 
 const migrations = [
   { version: 1, sql: initialSchema, markApplied: 'PRAGMA user_version = 1' },
+  { version: 2, sql: testRunSchema, markApplied: 'PRAGMA user_version = 2' },
 ];
 
 export function migrate(db: DatabaseSync): void {

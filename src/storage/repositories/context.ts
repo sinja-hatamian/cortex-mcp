@@ -7,11 +7,13 @@ import type {
 } from '../../core/context.js';
 import { MAX_CLAIM_CRITERIA } from '../../core/models.js';
 import { inTransaction } from '../transaction.js';
+import { testRunRepository } from './test-runs.js';
 
 type ClaimRow = Omit<NonNullable<ProjectContext['claims']>[number], 'criteria'>;
 type CriterionRow = Omit<ContextCriterion, 'required'> & { required: number };
 
 export function contextRepository(db: DatabaseSync) {
+  const testRuns = testRunRepository(db);
   return {
     get(
       projectId: string,
@@ -93,6 +95,9 @@ export function contextRepository(db: DatabaseSync) {
           `,
               )
               .all(projectId, limit) as ProjectContext['reviews'];
+          }
+          if (include.includes('test_runs')) {
+            result.test_runs = testRuns.list(projectId, limit);
           }
           return result;
         },

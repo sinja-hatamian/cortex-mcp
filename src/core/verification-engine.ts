@@ -4,11 +4,13 @@ import type {
   ClaimState,
   ClaimWithCriteria,
   Criterion,
+  CriterionEvaluation,
   Evidence,
   ProjectPolicy,
   ReviewFinding,
   ReviewTarget,
 } from './models.js';
+import { criterionOutcomes } from './models.js';
 import { compareText, orderFindings, type FindingRuleId } from './rules.js';
 
 export const policyVersion = {
@@ -18,7 +20,7 @@ export const policyVersion = {
 
 type ClaimSnapshot = {
   claim: Pick<ClaimWithCriteria, 'id'> & {
-    criteria: readonly Pick<Criterion, 'id' | 'required'>[];
+    criteria: readonly Pick<Criterion, 'id' | 'key' | 'required'>[];
   };
   evidence: readonly Pick<
     Evidence,
@@ -60,16 +62,27 @@ function evidenceFinding(
   };
 }
 
+function criterionOutcome(
+  hasSupport: boolean,
+  hasContradiction: boolean,
+  hasAdmissibleSupport: boolean,
+): CriterionEvaluation['outcome'] {
+  if (hasContradiction)
+    return hasSupport ? 'conflicting_reports' : 'reported_failure';
+  if (!hasSupport) return 'missing_evidence';
+  return hasAdmissibleSupport ? 'supported' : 'unverified_source';
+}
+
 export function evaluateClaim(
   { claim, evidence }: ClaimSnapshot,
   policy: ProjectPolicy,
 ): { evaluation: ClaimEvaluation; findings: ReviewFinding[] } {
-  const requiredIds = claim.criteria
-    .filter(({ required }) => required)
-    .map(({ id }) => id);
+  const requiredCriteria = claim.criteria.filter(({ required }) => required);
+  const requiredIds = requiredCriteria.map(({ id }) => id);
   const required = new Set(requiredIds);
   const reportedSupport = new Set<string>();
   const admissibleSupport = new Set<string>();
+  const reportedContradictions = new Set<string>();
   const admissibleContradictions: string[] = [];
   const otherContradictions: string[] = [];
   const reportedOnly: string[] = [];
@@ -82,6 +95,7 @@ export function evaluateClaim(
     const criterion = record.criterion_id;
     const isRequired = criterion !== null && required.has(criterion);
     if (record.relation === 'contradicts') {
+      if (isRequired) reportedContradictions.add(criterion);
       (admissible && isRequired
         ? admissibleContradictions
         : otherContradictions
@@ -103,6 +117,22 @@ export function evaluateClaim(
     claim_id: claim.id,
     state,
     criteria_satisfied_as_reported: complete,
+    criterion_evaluations: requiredCriteria
+      .map(({ id, key }) => ({
+        outcome: criterionOutcome(
+          reportedSupport.has(id),
+          reportedContradictions.has(id),
+          admissibleSupport.has(id),
+        ),
+        criterion_id: id,
+        key,
+      }))
+      .sort(
+        (left, right) =>
+          criterionOutcomes.indexOf(left.outcome) -
+            criterionOutcomes.indexOf(right.outcome) ||
+          compareText(left.key, right.key),
+      ),
   };
   if (state !== 'unverified') evaluation.assurance = 'provisional';
   else if (reportedOnly.length && !admissibleSupport.size)

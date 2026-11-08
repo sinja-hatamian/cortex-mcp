@@ -95,6 +95,18 @@ New projects use `strict-1`. This policy treats caller-supplied evidence as repo
 
 `criteria_satisfied_as_reported` tracks positive coverage separately. It is true when every required criterion has a linked supporting report, including when other records contradict that support. Neutral or unlinked records provide no criterion coverage. Review uses the relation recorded by the caller and the project policy.
 
+Each claim evaluation lists its required criteria in `criterion_evaluations`, with an `outcome`, `criterion_id`, and `key`. Outcomes appear in the order below, with ties sorted by key.
+
+| Outcome               | What Cortex recorded                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `conflicting_reports` | Both supporting and contradicting evidence link to the criterion.                           |
+| `reported_failure`    | Contradicting evidence links to the criterion and supporting evidence is absent.            |
+| `missing_evidence`    | No supporting or contradicting evidence links to the criterion.                             |
+| `unverified_source`   | Supporting evidence links to the criterion, and the policy admits none of it.               |
+| `supported`           | The policy admits supporting evidence and no contradicting evidence links to the criterion. |
+
+These outcomes explain evidence coverage and policy eligibility. A reported failure reflects the recorded relation, and support admitted by the provisional policy carries provisional assurance. A review saved before this field was introduced retains its original snapshot.
+
 Decision reviews are advisory and cover the referenced records. A contradicted claim or a refuted assumption yields `blocked_recommendation`. Other warnings yield `warning`. A review with no such findings yields `pass_with_caveats`.
 
 | Rule                        | When it applies                                                                                                                                   |
@@ -135,6 +147,18 @@ The result contains the project ID and only the requested collections. The limit
 
 Claim entries include criterion IDs, keys, and required flags. Evidence includes claimed provenance and `assurance: "unverified_origin"`. Review summaries include the target, status, policy version, and creation time. A project with no matching records returns empty arrays for the requested collections.
 
+## Collect a local test run
+
+The experimental collector requires Git and an existing claim and criterion. Run it from the checkout with the same `CORTEX_DATA_DIR` as the MCP server. Pass one to eight distinct, tracked test files as paths relative to the Git root.
+
+```sh
+node /absolute/path/to/cortex-mcp/dist/cli.js collect-test example-api CLAIM_ID CRITERION_ID -- test/auth.test.mjs
+```
+
+Cortex runs the selected files with Node's built-in test runner. It checks for a clean Git working tree and the same `HEAD` before and after execution. It prints a JSON receipt to stdout and directs test output to stderr. Exit codes are `0` for a saved run that exited successfully, `1` for a saved run with a nonzero test exit, and `2` for a collection error. The receipt retains the test runner's original exit code. A launch error or a run that times out after two minutes yields no receipt.
+
+Request `"include": ["test_runs"]` with `cortex_get_context` to recover receipts. Each contains the claim and criterion IDs, Git revision, Node version, selected files, observed exit code, and timestamp. The collector executes local test code with the user's permissions. A clean Git check observes the working tree at two points, and ignored files or local dependencies can still affect execution. Reviews evaluate separately submitted evidence under the project policy.
+
 ## Local storage
 
 The storage layer uses Node's built-in, synchronous `node:sqlite` driver. It creates and migrates `cortex.sqlite3` when the internal database is opened. [Node.js SQLite documentation](https://nodejs.org/download/release/latest-lithium/docs/api/sqlite.html)
@@ -155,7 +179,7 @@ To remove local Cortex data, close every client using the database. Back up `cor
 
 Run the [authentication verification example](examples/authentication-verification.md) to see a missing-evidence warning, caller-reported coverage, an advisory blocked recommendation, and recovery after reconnecting.
 
-Cortex evaluates explicit relationships and caller-reported observations under the project policy. It has no trusted collector in this version. A client can fabricate or omit records, and verification under a policy carries the assurance shown in the result. See [security and trust](SECURITY.md) for reporting and data handling.
+Cortex evaluates explicit relationships and caller-reported observations under the project policy. A client can fabricate or omit reports, and verification under a policy carries the assurance shown in the result. Local test receipts record an observed process exit. Their integrity depends on the local environment and SQLite file access. See [security and trust](SECURITY.md) for reporting and data handling.
 
 ## Run the checks
 

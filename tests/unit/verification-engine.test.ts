@@ -8,9 +8,9 @@ import {
 const claim = {
   id: 'claim',
   criteria: [
-    { id: 'criterion-a', required: true },
-    { id: 'criterion-b', required: true },
-    { id: 'optional', required: false },
+    { id: 'criterion-a', key: 'a', required: true },
+    { id: 'criterion-b', key: 'b', required: true },
+    { id: 'optional', key: 'optional', required: false },
   ],
 };
 
@@ -39,6 +39,10 @@ test('missing, neutral, and unlinked evidence leave required criteria unsupporte
     claim_id: claim.id,
     state: 'unverified',
     criteria_satisfied_as_reported: false,
+    criterion_evaluations: [
+      { outcome: 'missing_evidence', criterion_id: 'criterion-a', key: 'a' },
+      { outcome: 'missing_evidence', criterion_id: 'criterion-b', key: 'b' },
+    ],
   });
   expect(review.findings).toMatchObject([
     {
@@ -50,12 +54,16 @@ test('missing, neutral, and unlinked evidence leave required criteria unsupporte
 
   const optionalClaim = {
     ...claim,
-    criteria: [{ id: 'optional', required: false }],
+    criteria: [claim.criteria[2]],
   };
   expect(
     evaluateClaim({ claim: optionalClaim, evidence: records }, 'provisional'),
   ).toMatchObject({
-    evaluation: { state: 'unverified', criteria_satisfied_as_reported: false },
+    evaluation: {
+      state: 'unverified',
+      criteria_satisfied_as_reported: false,
+      criterion_evaluations: [],
+    },
     findings: [
       { rule_id: 'MISSING_REQUIRED_EVIDENCE' },
       { rule_id: 'UNVERIFIED_CLAIM' },
@@ -70,6 +78,10 @@ test('only eligible evidence can establish provisional verification', () => {
       state: 'unverified',
       assurance: 'reported_only',
       criteria_satisfied_as_reported: true,
+      criterion_evaluations: [
+        { outcome: 'unverified_source', criterion_id: 'criterion-a', key: 'a' },
+        { outcome: 'unverified_source', criterion_id: 'criterion-b', key: 'b' },
+      ],
     },
     findings: [
       { rule_id: 'REPORTED_ONLY_EVIDENCE' },
@@ -82,6 +94,10 @@ test('only eligible evidence can establish provisional verification', () => {
       state: 'verified',
       assurance: 'provisional',
       criteria_satisfied_as_reported: true,
+      criterion_evaluations: [
+        { outcome: 'supported', criterion_id: 'criterion-a', key: 'a' },
+        { outcome: 'supported', criterion_id: 'criterion-b', key: 'b' },
+      ],
     },
     findings: [],
   });
@@ -97,7 +113,14 @@ test('only eligible evidence can establish provisional verification', () => {
       'provisional',
     ),
   ).toMatchObject({
-    evaluation: { state: 'unverified', criteria_satisfied_as_reported: true },
+    evaluation: {
+      state: 'unverified',
+      criteria_satisfied_as_reported: true,
+      criterion_evaluations: [
+        { outcome: 'unverified_source', criterion_id: 'criterion-b', key: 'b' },
+        { outcome: 'supported', criterion_id: 'criterion-a', key: 'a' },
+      ],
+    },
     findings: [
       { rule_id: 'REPORTED_ONLY_EVIDENCE' },
       { rule_id: 'UNVERIFIED_CLAIM' },
@@ -118,6 +141,14 @@ test('an admissible contradiction to a required criterion wins even if another c
       state: 'contradicted',
       assurance: 'provisional',
       criteria_satisfied_as_reported: false,
+      criterion_evaluations: [
+        {
+          outcome: 'conflicting_reports',
+          criterion_id: 'criterion-a',
+          key: 'a',
+        },
+        { outcome: 'missing_evidence', criterion_id: 'criterion-b', key: 'b' },
+      ],
     },
     findings: [
       {
@@ -244,4 +275,8 @@ test('ordering and evidence samples are independent of record arrival order', ()
     record_ids: ['a', 'b', 'c', 'claim'],
     message: expect.stringContaining('5 records'),
   });
+  expect(first.claim_evaluations[1].criterion_evaluations).toEqual([
+    { outcome: 'reported_failure', criterion_id: 'criterion-a', key: 'a' },
+    { outcome: 'missing_evidence', criterion_id: 'criterion-b', key: 'b' },
+  ]);
 });

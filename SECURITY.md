@@ -6,4 +6,6 @@ Cortex stores data in a local SQLite database. A process with access to the data
 
 A client can fabricate evidence, misclassify its relationship to a criterion, or omit relevant claims. Claimed origins and supplied digests describe what the caller submitted. A provisional result means the records satisfied a configured policy. Decision reviews provide advisory recommendations.
 
+The opt-in test collector runs selected test files with the local user's permissions. Receipts capture the test process exit code and its checkout and runtime details. Test code and dependencies determine what a successful exit means. Processes with write access to the database can modify receipts.
+
 Store short summaries and references in evidence records. Keep secrets, raw tool output, and sensitive files outside the database. See the [README](README.md#local-storage) for the data location and removal steps.

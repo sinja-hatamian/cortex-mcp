@@ -1,4 +1,5 @@
 import * as z from 'zod/v4';
+import { criterionOutcomes } from '../core/models.js';
 import { findingRuleIds } from '../core/rules.js';
 import { description, id, inputId, label, objectOptions } from './fields.js';
 
@@ -55,6 +56,13 @@ const summary = {
       state: claimState,
       assurance: z.enum(['reported_only', 'provisional']).optional(),
       criteria_satisfied_as_reported: z.boolean(),
+      criterion_evaluations: z.array(
+        z.object({
+          outcome: z.enum(criterionOutcomes),
+          criterion_id: id,
+          key: z.string(),
+        }),
+      ),
     }),
   ),
   findings: z.array(

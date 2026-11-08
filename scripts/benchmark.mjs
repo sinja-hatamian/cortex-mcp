@@ -6,7 +6,7 @@ import { evaluateDecision } from '../dist/core/verification-engine.js';
 const criterion_id = 'route-denial';
 const claim = {
   id: 'route-auth',
-  criteria: [{ id: criterion_id, required: true }],
+  criteria: [{ id: criterion_id, key: 'route-denial', required: true }],
 };
 const support = {
   id: 'test-pass',

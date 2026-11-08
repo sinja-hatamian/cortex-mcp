@@ -9,6 +9,7 @@ import {
 } from './claims-evidence.js';
 import { id, label, objectOptions } from './fields.js';
 import { claimState, decisionStatus } from './review.js';
+import { testRunOutput } from './test-runs.js';
 
 export const getContextInput = z.strictObject(
   {
@@ -119,4 +120,5 @@ export const getContextOutput = z.object({
       ]),
     )
     .optional(),
+  test_runs: z.array(testRunOutput).optional(),
 });
